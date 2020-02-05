@@ -9,3 +9,16 @@
     cursor:pointer;
     font-size: 14px;
 }
+
+.queryResultsTable
+{
+	width:100%;
+	word-wrap:break-word;
+}
+.queryResultsTable td, th, tr
+{
+	border: 1px solid blue;
+	vertical-align: top;
+	padding: 2px;
+	margin: 0px;
+}

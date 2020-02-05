@@ -9,8 +9,6 @@ error_reporting(E_ALL);
 
 require_once("crud_config.php");
 
-echo "<script src='crud.js'></script>";
-echo "<link rel='stylesheet' href='crud.css'></style>";
 
 class CRUD
 {
@@ -33,7 +31,6 @@ class CRUD
     function start()
     {
         $params = array_merge($_GET, $_POST);
-        $this->showTableSelectForm($params);
         if (isset($params['cmd']))
         {
             if      ($params['cmd'] == 'query')        {$this->showQueryTableForm($params);}
@@ -44,14 +41,22 @@ class CRUD
             else if ($params['cmd'] == 'editRecord')   {$this->showEditRecordForm($params);}
             else if ($params['cmd'] == 'updateRecord') {$this->updateRecord($params);}
         }
+        else {$this->showQueryTableForm($params);}
+    }
+
+
+    function printPageHeader()
+    {
+        echo "<script src='crud.js'></script>";
+        echo "<link rel='stylesheet' href='crud.css'></style>";        
     }
 
 
     function showTableSelectForm($params)
     {
-        $table = $params['table'];
+        $table = (isset($params['table'])) ? $params['table'] : false;
 
-        echo "<b>TABLE: </b>";
+        echo "<b>TABLE:&nbsp;</b>";
         echo "<form action='index.php' method='GET' style='margin:0; padding:0; display:inline;'>";
         echo "<select name='table' onchange='this.form.submit();'>";
         echo "<option disabled selected value> -- select an option -- </option>";
@@ -74,6 +79,9 @@ class CRUD
 
     function showCreateRecordForm($params)
     {
+        $this->printPageHeader();
+        $this->showTableSelectForm($params);
+
         $table = $params['table'];
         $tableDesc = $this->getTableDesc($table, true);
         $pk = $this->getPrimaryKey($tableDesc);
@@ -142,6 +150,9 @@ class CRUD
 
     function insertRecord($params)
     {
+        $this->printPageHeader();
+        $this->showTableSelectForm($params);
+
         $table = $params['table'];
         $query = "INSERT INTO `$table` set";
         $i=0;
@@ -163,6 +174,11 @@ class CRUD
 
     function showQueryTableForm($params)
     {
+        $this->printPageHeader();
+        $this->showTableSelectForm($params);
+
+        if (!isset($params['table'])) return;
+
         $table = $params['table'];
         $tableDesc = $this->dbQuery("show full columns from $table");
 
@@ -175,6 +191,7 @@ class CRUD
         echo "<p>";
         // $this->showOrderBy($tableDesc);
         // echo "<p>";
+        echo "<input type='checkbox' name='export' value='export'/> Export to file<p>";
         echo "<input class='button1' type=submit value='Submit query'>";
         echo "</form>";
     }
@@ -267,16 +284,14 @@ class CRUD
 
     function showQueryTableResults($params)
     {
-        $table = $params['table'];
-        echo "<input type=hidden name=table value='$table'>";
-
         $query = $this->buildQuery($params);
         $data = $this->dbQuery($query);
-        $this->printQueryResults($data, $params);
+        if (isset($params['export'])) {$this->exportQueryResults($data, $params);}
+        else                          {$this->printQueryResults($data, $params);}
     }
 
 
-    function buildQuery($vars)
+    function buildQuery($params)
     {
         $qCols = "";
         $qWhere = "";
@@ -284,8 +299,8 @@ class CRUD
         $i = 0; 
         $j = 0;
         
-        reset ($vars);
-        foreach ($vars as $index=>$value)
+        reset ($params);
+        foreach ($params as $index=>$value)
         {
             $pre = substr ($index, 0, 2);
             if ($pre == "CB") 
@@ -311,21 +326,17 @@ class CRUD
         if (strlen ($qCols) <= 0) {$qCols = "*";}
         $qWhere = (strlen($qWhere) > 0) ? " where $qWhere " : "";
 
-        $query = "select $qCols from $vars[table] $qWhere $qOrderBy";
+        $query = "select $qCols from $params[table] $qWhere $qOrderBy";
         return $query;
     }
 
 
-    function printQueryResults($results, $vars)
+    function getCheckedFields($params)
     {
-        $table = $vars['table'];
-        $tableDesc = $this->dbQuery("show full columns from $table");
-        $pk = $this->getPrimaryKey($tableDesc);
-
-        reset ($vars);
+        reset ($params);
         $fields = array();
         $i=0;
-        foreach ($vars as $index=>$value)
+        foreach ($params as $index=>$value)
         {
             $pre = substr ($index, 0, 2);
             if ($pre == "CB") 
@@ -335,10 +346,45 @@ class CRUD
                 $i++;
             }
         }
+        return $fields;        
+    }
 
+
+    function exportQueryResults($results, $params)
+    {
+        $file = 'test.txt';
+        header("Content-type:text/csv");
+        header("Content-disposition: attachment; filename=$file");
+
+        $fields = $this->getCheckedFields($params);
+        foreach ($results as $row)
+        {
+            foreach ($fields as $i=>$fld)
+            {
+                $val = $row[$fld];
+                if ($i > 0) echo "\t";
+                echo "$val";
+            }
+            echo "\n";
+        }
+    }
+
+
+    function printQueryResults($results, $params)
+    {
+        $this->printPageHeader();
+        $this->showTableSelectForm($params);
+
+        $table = $params['table'];
+        $tableDesc = $this->getTableDesc($table, true);
+        $pk = $this->getPrimaryKey($tableDesc);
+
+        $fields = $this->getCheckedFields($params);
+
+        echo "<input type=hidden name=table value='$table'>";
         echo "<b>Query results: </b><i>(click headers to sort)</i><p>";
-        echo "<table id='queryResultsTable' border=1 cellpadding=3>";
-        echo "<tr bgcolor=#eeeeee>";
+        echo "<table id='queryResultsTable' class='queryResultsTable'>";
+        echo "<tr bgcolor=#dddddd>";
         echo "<th></th>";
         foreach ($fields as $i=>$fld)
         {
@@ -358,9 +404,10 @@ class CRUD
             foreach ($fields as $fld)
             {
                 $val = $row[$fld];
-                echo "<td>$val";
+                $style = ($tableDesc[$fld]['Type'] == 'text') ? ' style="max-width:400px;" ' : '';
+                echo "<td $style>$val</td>";
             }
-            echo "<br>";
+            echo "</tr>";
         }
         echo "</table>";
     }
@@ -394,6 +441,9 @@ class CRUD
 
     function showEditRecordForm($params)
     {
+        $this->printPageHeader();
+        $this->showTableSelectForm($params);
+
         $table  = $params['table'];
         $recordId = $params['recordId'];
 
@@ -460,14 +510,16 @@ class CRUD
 
     function updateRecord($params)
     {
+        $this->printPageHeader();
+        $this->showTableSelectForm($params);
+
         $table = $params['table'];
         $recordId = $params['recordId'];
 
         $tableDesc = $this->dbQuery("show full columns from $table");
         $pk = $this->getPrimaryKey($tableDesc);
 
-        $delete = $params['delete'];
-        if ($delete == "delete")
+        if (isset($params['delete']))
         {
             $query = "DELETE from ".$table." WHERE $pk = ".$recordId;
             $this->dbQuery($query);
@@ -492,8 +544,6 @@ class CRUD
 
         if (!$result) {print "<span style='background-color:#ff8888'>UPDATE QUERY ERROR</span><p>";}
         else          {print "<span style='background-color:#88ff88'>update successful</span><p>";}
-
-        $this->showEditRecordForm($params);    
     }
 
     function dbQuery($query)
