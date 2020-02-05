@@ -1,6 +1,9 @@
 <?php
-
-$crudTitle = 'title';
+//----------------------------------------------------------
+// Edit this file and rename to 'crud_config.php'
+//
+//----------------------------------------------------------
+$pageTitle = 'title';
 $scriptPath = 'index.php';
 
 
