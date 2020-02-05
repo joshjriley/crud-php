@@ -26,7 +26,6 @@ class CRUD
         $this->dbPass   = $dbPass;
         $this->dbTables = $dbTables;
         $this->foreignKeys = $dbForeignKeys;
-        $this->scriptPath = $scriptPath;
         $this->title    = $crudTitle;
     }
 
@@ -53,7 +52,7 @@ class CRUD
         $table = $params['table'];
 
         echo "<b>TABLE: </b>";
-        echo "<form action='$this->scriptPath' method='GET' style='margin:0; padding:0; display:inline;'>";
+        echo "<form action='index.php' method='GET' style='margin:0; padding:0; display:inline;'>";
         echo "<select name='table' onchange='this.form.submit();'>";
         echo "<option disabled selected value> -- select an option -- </option>";
         foreach ($this->dbTables as $dbTable)
@@ -79,7 +78,7 @@ class CRUD
         $tableDesc = $this->getTableDesc($table, true);
         $pk = $this->getPrimaryKey($tableDesc);
 
-        echo "<FORM method=POST action='$this->scriptPath'>";
+        echo "<FORM method=POST action='index.php'>";
         echo '<table border=1>';
         echo "<tr bgcolor=#abcdef><td colspan=99 align=center><b>Create new '$table' record</b></td></tr>";
         foreach ($tableDesc as $index=>$value)
@@ -167,7 +166,7 @@ class CRUD
         $table = $params['table'];
         $tableDesc = $this->dbQuery("show full columns from $table");
 
-        echo "<form action='$this->scriptPath' name='dataform' method='post' style='margin:0; padding:0;'>";
+        echo "<form action='index.php' name='dataform' method='post' style='margin:0; padding:0;'>";
         echo "<input type=hidden name=cmd value='doQuery'>";
         echo "<input type=hidden name=table value='".$table."'>";
         $this->showTableColumnSelect($tableDesc); 

@@ -4,7 +4,6 @@
 //
 //----------------------------------------------------------
 $pageTitle = 'title';
-$scriptPath = 'index.php';
 
 
 $dbServer = '';
@@ -13,7 +12,6 @@ $dbUser = '';
 $dbPass = '';
 
 
-$dbTablesPrefix = '';
 $dbTables = array(
 	'table1',
 	'table2',
