@@ -5,17 +5,8 @@ crud.php - Utility mysql database create/read/update/delete class.
 -----------------------------------------------------------------------------------*/
 include_once("crud_config.php");
 
-
-?>
-<script>
-function setForeignKeyVal(dd, objName)
-{
-    var val = dd.value;
-    var input = document.getElementById(objName);
-    input.value = val;
-}
-</script>
-<?php 
+echo "<script src='crud.js'></script>";
+echo "<link rel='stylesheet' href='crud.css'></style>";
 
 class CRUD
 {
@@ -42,10 +33,11 @@ class CRUD
         $this->showTableSelectForm($params);
         if ($params['cmd'])
         {
-            if      ($params['cmd'] == 'tableSelect')  {$this->selectTableAction($params);}
+            if      ($params['cmd'] == 'query')        {$this->showQueryTableForm($params);}
+            else if ($params['cmd'] == 'doQuery')      {$this->showQueryTableResults($params);}
+            else if ($params['cmd'] == 'create')       {$this->showCreateRecordForm($params);}
             else if ($params['cmd'] == 'newRecord')    {$this->showNewRecordForm($params);}
             else if ($params['cmd'] == 'insertRecord') {$this->insertRecord($params);}
-            else if ($params['cmd'] == 'tableQuery')   {$this->showTableQueryResults($params);}
             else if ($params['cmd'] == 'editRecord')   {$this->showEditRecordForm($params);}
             else if ($params['cmd'] == 'updateRecord') {$this->updateRecord($params);}
         }
@@ -54,51 +46,48 @@ class CRUD
 
     function showTableSelectForm($params)
     {
-        $dbTable = $params['dbTable'];
+        $table = $params['table'];
 
-        echo "<b>Select table: </b>";
-        echo "<form action='$this->scriptPath' method='POST' style='margin:0; padding:0; display:inline;'>";
-        echo "<select name='dbTable'>";
-        foreach ($this->dbTables as $table)
+        echo "<b>TABLE: </b>";
+        echo "<form action='$this->scriptPath' method='GET' style='margin:0; padding:0; display:inline;'>";
+        echo "<select name='table' onchange='this.form.submit();'>";
+        echo "<option disabled selected value> -- select an option -- </option>";
+        foreach ($this->dbTables as $dbTable)
         {
-            $selected = ($table == $dbTable) ? " selected " : '';
-            echo "<option $selected>$table</option>";
+            $selected = ($dbTable == $table) ? " selected " : '';
+            echo "<option $selected>$dbTable</option>";
         }        
         echo "</select> ";
-        echo "<input type='submit' name='queryForm' value='Query Form'>";
-        echo "<input type='submit' name='newRecord' value='Insert New'>";
-        echo "<input type='hidden' name='cmd' value='tableSelect'>";
         echo "</form>";
+
+        if ($table)
+        {
+            echo " &nbsp; <a href='index.php?table=$table&cmd=query'><button class='button1'>query table</button></a>";
+            echo " &nbsp; <a href='index.php?table=$table&cmd=create'><button class='button1'>create record</button></a>";
+        }
         echo "<hr>";
     }
 
 
-    function selectTableAction($params)
+    function showCreateRecordForm($params)
     {
-        if      ($params['queryForm']) {$this->showTableQueryForm($params);}
-        else if ($params['newRecord']) {$this->showNewRecordForm($params);}
-    }
+        $table = $params['table'];
+        $tableDesc = $this->getTableDesc($table, true);
+        $pk = $this->getPrimaryKey($tableDesc);
 
-
-    function showNewRecordForm($params)
-    {
-        $dbTable = $params['dbTable'];
-        $tableDesc = $this->dbQuery("show full columns from $dbTable");
         echo "<FORM method=POST action='$this->scriptPath'>";
-        echo "<h2>New Element for the '$dbTable' table</h2>";
         echo '<table border=1>';
-
+        echo "<tr bgcolor=#abcdef><td colspan=99 align=center><b>Create new '$table' record</b></td></tr>";
         while( list($index, $value) = each ($tableDesc) )
         {
             $title = $value['Field'];
             $type = $value['Type'];
             $formName = "insert_$title";
 
-            if ($title == "id"  || $title == "modDate") {continue;}
+            if ($title == $pk || stristr($tableDesc[$index]['Extra'], 'CURRENT_TIMESTAMP')) {continue;}
 
             echo "<tr>";
             echo "<td align=right><strong>$title</strong></td>";
-            //todo: move skips to config
             echo "<td>";
             if ( $type == "text" || $type == "longtext" )
             {
@@ -110,11 +99,11 @@ class CRUD
             }
 
             $fkey = false; $ftable = false; $foptions = false;
-            if (array_key_exists($dbTable, $this->foreignKeys) && array_key_exists($title, $this->foreignKeys[$dbTable]))
+            if (array_key_exists($table, $this->foreignKeys) && array_key_exists($title, $this->foreignKeys[$table]))
             {
-                $fkey   = $this->foreignKeys[$dbTable][$title][0];
-                $ftable = $this->foreignKeys[$dbTable][$title][1];
-                $fname  = $this->foreignKeys[$dbTable][$title][2];
+                $fkey   = $this->foreignKeys[$table][$title][0];
+                $ftable = $this->foreignKeys[$table][$title][1];
+                $fname  = $this->foreignKeys[$table][$title][2];
                 $ddhtml = $this->getForeignKeyDropdownHtml($ftable, $fkey, $fname, $formName);
                 echo $ddhtml;
             }
@@ -125,9 +114,9 @@ class CRUD
         }
 
         echo "</table>";
-        echo "<input type='hidden' name='dbTable' value='$dbTable'>";
+        echo "<input type='hidden' name='table' value='$table'>";
         echo "<input type='hidden' name='cmd' value='insertRecord'>";
-        echo "<br><input type='submit' value='Submit'>";
+        echo "<br><input class='button1' type='submit' value='Submit'>";
         echo "</FORM>";
     }
 
@@ -150,8 +139,8 @@ class CRUD
 
     function insertRecord($params)
     {
-        $dbTable = $params['dbTable'];
-        $query = "INSERT INTO `$dbTable` set";
+        $table = $params['table'];
+        $query = "INSERT INTO `$table` set";
         $i=0;
         foreach ($params as $label => $value)
         {
@@ -164,28 +153,26 @@ class CRUD
             }
         }
         $result = $this->dbQuery($query);
-        if (!$result) {print "<font color='#880000'>INSERT QUERY ERROR!<br>";}
-        else          {print "<font color='#008800'>insert successful<br>";}
+        if (!$result) {print "<font color='#880000'>INSERT QUERY ERROR!</font><br>";}
+        else          {print "<font color='#008800'>insert successful</font><br>";}
     }
 
 
-    function showTableQueryForm($params)
+    function showQueryTableForm($params)
     {
-        $dbTable = $params['dbTable'];
-        $tableDesc = $this->dbQuery("show full columns from $dbTable");
+        $table = $params['table'];
+        $tableDesc = $this->dbQuery("show full columns from $table");
 
         echo "<form action='$this->scriptPath' name='dataform' method='post' style='margin:0; padding:0;'>";
-        echo "<input type=hidden name=cmd value='tableQuery'>";
-        echo "<input type=hidden name=table value='".$dbTable."'>";
+        echo "<input type=hidden name=cmd value='doQuery'>";
+        echo "<input type=hidden name=table value='".$table."'>";
         $this->showTableColumnSelect($tableDesc); 
-        echo "<hr>";
+        echo "<p>";
         $this->showTableQueryFields($tableDesc);
-        echo "<hr>";
-        $this->showOrderBy($tableDesc);
-        echo "<hr>";
-        echo "<input type=submit value='Submit query'>";
-        echo "&nbsp;&nbsp;&nbsp;";
-        echo "<input type=reset value='Clear Form'>";
+        echo "<p>";
+        // $this->showOrderBy($tableDesc);
+        // echo "<p>";
+        echo "<input class='button1' type=submit value='Submit query'>";
         echo "</form>";
     }
 
@@ -205,25 +192,25 @@ class CRUD
 
     function showTableQueryFields($tableDesc)
     {
-        echo '<p><b>Enter search criteria (assume "like" search):</b><br>';
         echo "<table border=1>"; 
+        echo "<tr bgcolor=#abcdef><td colspan=99 align=left><b>Enter search criteria (assume 'like' search):</b></td></tr>";
         reset ($tableDesc);
         $i = 0;
         while (list ($index, $value) = each ($tableDesc))
         {
             if ($i == 0) {echo "<tr>";}
 
-            echo "<td align=right>";        
+            echo "<td bgcolor=#ffffee align=right>";        
             echo $value['Field'];
-            echo ":&nbsp;&nbsp;</td><td>";
-            echo "<input name='TX".$value['Field']."' value=''></input>&nbsp;&nbsp;";     
+            echo ":&nbsp;&nbsp;</td>";
+            echo "<td>";
+            echo "<input name='TX".$value['Field']."' value=''></input>&nbsp;";     
             echo "</td>";       
 
             if ($i == 1) {echo "</tr>\n";}
             $i++;
             if ($i >= 2) $i = 0;
         }
-
         if ($i != 0)
         {
             while ($i < 2)
@@ -233,14 +220,13 @@ class CRUD
             }
             echo "</tr>";
         }
-
         echo "</table>";
     }
 
     function showTableColumnSelect($tableDesc)
     {   
-        echo "<p><b>Select columns to show:</b><br>";
         echo "<table border=2>";   
+        echo "<tr bgcolor=#abcdef><td colspan=99 align=left><b>Select columns to show:</b></td></tr>";
 
         reset ($tableDesc);
         $i = 0;
@@ -248,10 +234,8 @@ class CRUD
         while (list ($index, $value) = each ($tableDesc))
         {
             if ($i == 0) {echo "<tr>";}
-
-            if (($i + $l) % 2 == 0) $color='#FFFFEE'; else $color='#EFFFFF';
             
-            echo "<td bgcolor='".$color."'>";
+            echo "<td bgcolor=#eeffff>";
             echo "<input type='checkbox' name='CB".$value['Field'];
             echo "'checked >&nbsp;".$value['Field']."</input>";
             echo "</td>";       
@@ -274,15 +258,14 @@ class CRUD
             }
             echo "</tr>";
         }
-
         echo "</table>";
     }
 
 
-    function showTableQueryResults($params)
+    function showQueryTableResults($params)
     {
-        $dbTable = $params['dbTable'];
-        echo "<input type=hidden name=dbTable value='$dbTable'>";
+        $table = $params['table'];
+        echo "<input type=hidden name=table value='$table'>";
 
         $query = $this->buildQuery($params);
         $data = $this->dbQuery($query);
@@ -332,7 +315,9 @@ class CRUD
 
     function printQueryResults($results, $vars)
     {
-        $dbTable = $vars['table'];
+        $table = $vars['table'];
+        $tableDesc = $this->dbQuery("show full columns from $table");
+        $pk = $this->getPrimaryKey($tableDesc);
 
         reset ($vars);
         $fields = array();
@@ -348,33 +333,27 @@ class CRUD
             }
         }
 
-        echo "<b>Query results: <br>";
-        echo "<table border=1 cellpadding=3>";
+        echo "<b>Query results: </b><i>(click headers to sort)</i><p>";
+        echo "<table id='queryResultsTable' border=1 cellpadding=3>";
         echo "<tr bgcolor=#eeeeee>";
-        echo "<th>";
-        foreach ($fields as $fld)
+        echo "<th></th>";
+        foreach ($fields as $i=>$fld)
         {
-            echo "<th>".$fld;
+            echo "<th style='cursor:pointer;' onclick='sortTable(".($i+1).", \"queryResultsTable\")'>$fld</th>";
         }
 
         $i = 1;
         foreach ($results as $row)
         {
+            $id = $row[$pk];
             if ($i % 2 == 0) $bgcolor = "#eeffff";
             else             $bgcolor = "#ffffee";
             echo "<tr bgcolor=$bgcolor align=center>";
             ++$i;
 
-            echo "<td><form action='$this->scriptPath' method='POST' style='margin:0; padding:0;'>";
-            echo "<input type=hidden name=cmd value='editRecord'>";
-            echo "<input type=hidden name=recordId value='$row[id]'>";
-            echo "<input type=hidden name=dbTable value='$dbTable'>";
-            echo "<input type=submit value='edit'>";
-            echo "</form>";
-
+            echo "<td><a href='index.php?table=$table&cmd=editRecord&recordId=$id'><button class='button1'>edit</button></a></td>";
             foreach ($fields as $fld)
             {
-                $id = $row[id];               
                 $val = $row[$fld];
                 echo "<td>$val";
             }
@@ -384,20 +363,43 @@ class CRUD
     }
 
 
+    function getPrimaryKey($tableDesc)
+    {
+        foreach ($tableDesc as $td)
+        {
+            if ($td['Key'] == "PRI") return $td['Field'];
+        }
+        return false;
+    }
+
+
+    function getTableDesc($table, $hash=false)
+    {
+        $tableDesc = $this->dbQuery("show full columns from $table");
+        if ($hash)
+        {
+            $newTableDesc = array();
+            foreach ($tableDesc as $td)
+            {
+                $newTableDesc[$td['Field']] = $td;
+            }
+            $tableDesc = $newTableDesc;
+        }
+        return $tableDesc;
+    }
+
+
     function showEditRecordForm($params)
     {
-        $dbTable  = $params['dbTable'];
+        $table  = $params['table'];
         $recordId = $params['recordId'];
 
         //get table desc
-        $tableDesc = $this->dbQuery("show full columns from $dbTable");
-        foreach ($tableDesc as $td)
-        {
-            $tableDesc[$td['Field']] = $td;
-        }
+        $tableDesc = $this->getTableDesc($table, true);
+        $pk = $this->getPrimaryKey($tableDesc);
 
         //  Query database for existing data
-        $query = "SELECT * FROM $dbTable WHERE id = $recordId";
+        $query = "SELECT * FROM $table WHERE $pk = $recordId limit 1";
         $data = $this->dbQuery($query);
         if (!$data || count($data) == 0)
         {
@@ -405,88 +407,88 @@ class CRUD
             exit;
         }
         $row = $data[0];
+        $id = $row[$pk];
 
         //  Display current state of dataset & create text fields based on description for modifying the dataset
-        echo "<FORM method='post' action='$this->scriptPath' style='margin:0; padding:0;'>";
+        echo "<FORM method='post' action='index.php' style='margin:0; padding:0;'>";
         echo "<input type=hidden name=cmd value='updateRecord'>";
-        echo "<input type=hidden name=recordId value='$row[id]'>";
-        echo "<input type=hidden name=dbTable value='$dbTable'>";
+        echo "<input type=hidden name=recordId value='$id'>";
+        echo "<input type=hidden name=table value='$table'>";
         echo '<table border="1">';
-        $i = 0;
-        while( list($title, $value) = each ($row) )
+        echo "<tr bgcolor=#abcdef><td colspan=99 align=center><b>Edit '$table' record #$id</b></td></tr>";
+        while( list($col, $value) = each ($row) )
         {
-            $i++;
+            echo '<tr>';
+            echo '<td bgcolor=ffffee align="right"><strong>'.$col.'</strong></td>';
+            echo '<td>';
 
-            echo '<tr><td align="right">';
-            echo '<strong>'.$title.'</strong>';
-            echo '</td><td>';
-
-            if ($title == "ID" || $title == "LastUpdatedTime" )
+            if ($col == $pk || stristr($tableDesc[$col]['Extra'], 'CURRENT_TIMESTAMP')) 
             {
                 echo $value;
-                echo '<input type="hidden" name="'.$title.'" value="'.$value.'"><br />';
+                echo '<input type="hidden" name="'.$col.'" value="'.$value.'"><br />';
             }
             else 
             { 
-                $type = $tableDesc[$title]['Type'];
-                $inputname = "edit_$title";
+                $type = $tableDesc[$col]['Type'];
+                $inputname = "edit_$col";
                 if ( $type == "text" || $type == "longtext" )
-                    echo '<textarea rows="6" name="'.$inputname.'" cols="30">'.$value.'</textarea><br />';
+                    echo '<textarea rows="6" name="'.$inputname.'" cols="40">'.$value.'</textarea><br />';
                 else
                     echo '<input type="text" name="'.$inputname.'" size="40" value="'.$value.'"><br />';
 
                 echo '</td><td>';
-                echo $tableDesc[$title]['Type'];
+                echo $tableDesc[$col]['Type'];
             }
-
-            echo '</td></tr>';
+            echo '</td>';
+            echo '</tr>';
         }
 
         echo '</table>';
 
-        //
         // Create a checkbox to allow deletion of a record
-        echo '<input type="checkbox" name="delete" value="delete"/>Delete this record - permanently';
+        echo '<input type="checkbox" name="delete" value="delete"/> Delete this record - permanently<br>';
 
-
-        //
-        // Be sure to pass on the selected table
-        //
-        echo '<input type="hidden" name="table" value="'.$table.'"><br />';
-        echo "<p><hr>Be sure to double-check all fields & ONLY hit 'Update' once! <br>";
-        echo '<input type="submit" value="Update"><input type="reset" value="Reset"></p>';
+        // Submit button
+        echo "<input type='hidden' name='table' value='$table'><br />";
+        echo "<input class='button1' type='submit' value='Update'> &nbsp; ";
         echo "</FORM>";
-
     }
+
 
     function updateRecord($params)
     {
-        $dbTable = $params['dbTable'];
+        $table = $params['table'];
         $recordId = $params['recordId'];
+
+        $tableDesc = $this->dbQuery("show full columns from $table");
+        $pk = $this->getPrimaryKey($tableDesc);
 
         $delete = $params['delete'];
         if ($delete == "delete")
         {
-            $query = "DELETE from ".$table." WHERE id = ".$recordId;
+            $query = "DELETE from ".$table." WHERE $pk = ".$recordId;
             $this->dbQuery($query);
-            echo "This record with ID = ".$record." has been deleted";
+            echo "<font color=#882222>This record with $pk = ".$recordId." has been deleted!</font>";
             exit;
         }
 
         // Build and query database with the updates based on posted variables
+        //TODO: make this one query
+        $result = true;
         foreach ($params as $label => $value)
         {
             $pre = substr ($label, 0, 5);
             if ($pre == "edit_") 
             {
                 $name = substr($label, 5);
-                //todo: skip some? put in config
-                //todo: put 'id' in config
-                $query = "UPDATE $dbTable SET $name = '$value' WHERE id = $recordId LIMIT 1";
-                print "update query: $query<br>";
-                $this->dbQuery($query);
+                $query = "UPDATE $table SET $name = '$value' WHERE $pk = $recordId LIMIT 1";
+                $res = $this->dbQuery($query);
+                if (!$res) {$result = false;}
             }
         }    
+
+        if (!$result) {print "<span style='background-color:#ff8888'>UPDATE QUERY ERROR</span><p>";}
+        else          {print "<span style='background-color:#88ff88'>update successful</span><p>";}
 
         $this->showEditRecordForm($params);    
     }
@@ -502,7 +504,7 @@ class CRUD
         }
 
         $words = explode(" ", trim($query));
-        $word1 = $words[0];
+        $word1 = strtolower($words[0]);
         if (in_array($word1, array('select', 'describe', 'show')))
         {
             $rows = array();
