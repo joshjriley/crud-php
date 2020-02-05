@@ -58,7 +58,8 @@ class CRUD
 
         echo "<form action='index.php' method='GET' style='margin:0; padding:0; display:inline;'>";
         echo "<table cellpadding=3><tr>";
-        echo "<td style='background-color:#bbbbbb; border: 1px solid black'>".$this->pageTitle."</td>";
+        echo "<td style='background-color:#bbbbbb; border: 1px solid black'>";
+        echo "<a href='index.php' style='text-decoration:none'><b>".$this->pageTitle."</b></a></td>";
         echo "<td>";
         echo "<b>TABLE:&nbsp;</b>";
         echo "<select name='table' onchange='this.form.submit();'>";
