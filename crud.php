@@ -16,7 +16,7 @@ class CRUD
     function __construct()
     {
         global $dbServer, $dbName, $dbUser, $dbPass, $dbTables, $dbForeignKeys;
-        global $scriptPath, $crudTitle;
+        global $scriptPath, $pageTitle;
 
         $this->dbServer = $dbServer;
         $this->dbName   = $dbName;
@@ -24,7 +24,7 @@ class CRUD
         $this->dbPass   = $dbPass;
         $this->dbTables = $dbTables;
         $this->foreignKeys = $dbForeignKeys;
-        $this->title    = $crudTitle;
+        $this->pageTitle    = $pageTitle;
     }
 
 
@@ -48,7 +48,7 @@ class CRUD
     function printPageHeader()
     {
         echo "<script src='crud.js'></script>";
-        echo "<link rel='stylesheet' href='crud.css'></style>";        
+        echo "<link rel='stylesheet' href='crud.css'></style>";  
     }
 
 
@@ -56,8 +56,11 @@ class CRUD
     {
         $table = (isset($params['table'])) ? $params['table'] : false;
 
-        echo "<b>TABLE:&nbsp;</b>";
         echo "<form action='index.php' method='GET' style='margin:0; padding:0; display:inline;'>";
+        echo "<table cellpadding=3><tr>";
+        echo "<td style='background-color:#bbbbbb; border: 1px solid black'>".$this->pageTitle."</td>";
+        echo "<td>";
+        echo "<b>TABLE:&nbsp;</b>";
         echo "<select name='table' onchange='this.form.submit();'>";
         echo "<option disabled selected value> -- select an option -- </option>";
         foreach ($this->dbTables as $dbTable)
@@ -66,13 +69,14 @@ class CRUD
             echo "<option $selected>$dbTable</option>";
         }        
         echo "</select> ";
-        echo "</form>";
-
+        echo "</td>";
         if ($table)
         {
-            echo " &nbsp; <a href='index.php?table=$table&cmd=query'><button class='button1'>query table</button></a>";
-            echo " &nbsp; <a href='index.php?table=$table&cmd=create'><button class='button1'>create record</button></a>";
+            echo "<td><a href='index.php?table=$table&cmd=query'><button class='button1'>query table</button></a></td>";
+            echo "<td><a href='index.php?table=$table&cmd=create'><button class='button1'>create record</button></a></td>";
         }
+        echo "</tr></table>";
+        echo "</form>";
         echo "<hr>";
     }
 
@@ -352,7 +356,7 @@ class CRUD
 
     function exportQueryResults($results, $params)
     {
-        $file = 'test.txt';
+        $file = $params['table'] . "-" . date("Y-m-d-H-m-s") . '.txt';
         header("Content-type:text/csv");
         header("Content-disposition: attachment; filename=$file");
 
