@@ -3,7 +3,11 @@
 crud.php - Utility mysql database create/read/update/delete class.
 
 -----------------------------------------------------------------------------------*/
-include_once("crud_config.php");
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+require_once("crud_config.php");
 
 echo "<script src='crud.js'></script>";
 echo "<link rel='stylesheet' href='crud.css'></style>";
@@ -31,7 +35,7 @@ class CRUD
     {
         $params = array_merge($_GET, $_POST);
         $this->showTableSelectForm($params);
-        if ($params['cmd'])
+        if (isset($params['cmd']))
         {
             if      ($params['cmd'] == 'query')        {$this->showQueryTableForm($params);}
             else if ($params['cmd'] == 'doQuery')      {$this->showQueryTableResults($params);}
@@ -78,7 +82,7 @@ class CRUD
         echo "<FORM method=POST action='$this->scriptPath'>";
         echo '<table border=1>';
         echo "<tr bgcolor=#abcdef><td colspan=99 align=center><b>Create new '$table' record</b></td></tr>";
-        while( list($index, $value) = each ($tableDesc) )
+        foreach ($tableDesc as $index=>$value)
         {
             $title = $value['Field'];
             $type = $value['Type'];
@@ -181,7 +185,7 @@ class CRUD
     {
         echo "<p><b>Sort by: </b> ";
         echo "<select name='orderBy'>";
-        while (list ($index, $value) = each ($tableDesc))
+        foreach ($tableDesc as $index=>$value)
         {
             echo "<option value='".$value['Field']."'>";
             echo $value['Field'];
@@ -196,7 +200,7 @@ class CRUD
         echo "<tr bgcolor=#abcdef><td colspan=99 align=left><b>Enter search criteria (assume 'like' search):</b></td></tr>";
         reset ($tableDesc);
         $i = 0;
-        while (list ($index, $value) = each ($tableDesc))
+        foreach ($tableDesc as $index=>$value)
         {
             if ($i == 0) {echo "<tr>";}
 
@@ -231,7 +235,7 @@ class CRUD
         reset ($tableDesc);
         $i = 0;
         $l = 0;
-        while (list ($index, $value) = each ($tableDesc))
+        foreach ($tableDesc as $index=>$value)
         {
             if ($i == 0) {echo "<tr>";}
             
@@ -282,7 +286,7 @@ class CRUD
         $j = 0;
         
         reset ($vars);
-        while (list ($index, $value) = each($vars))
+        foreach ($vars as $index=>$value)
         {
             $pre = substr ($index, 0, 2);
             if ($pre == "CB") 
@@ -322,7 +326,7 @@ class CRUD
         reset ($vars);
         $fields = array();
         $i=0;
-        while (list ($index, $value) = each($vars))
+        foreach ($vars as $index=>$value)
         {
             $pre = substr ($index, 0, 2);
             if ($pre == "CB") 
@@ -416,7 +420,7 @@ class CRUD
         echo "<input type=hidden name=table value='$table'>";
         echo '<table border="1">';
         echo "<tr bgcolor=#abcdef><td colspan=99 align=center><b>Edit '$table' record #$id</b></td></tr>";
-        while( list($col, $value) = each ($row) )
+        foreach ($row as $col=>$value)
         {
             echo '<tr>';
             echo '<td bgcolor=ffffee align="right"><strong>'.$col.'</strong></td>';
@@ -511,7 +515,7 @@ class CRUD
             while ($row = mysqli_fetch_assoc($result)) {$rows[] = $row;}
             $result = $rows;
         }
-        mysqli_close();
+        $this->dbClose();
         return $result;
     }
 
