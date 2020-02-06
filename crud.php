@@ -96,31 +96,31 @@ class CRUD
         echo "<tr bgcolor=#abcdef><td colspan=99 align=center><b>Create new '$table' record</b></td></tr>";
         foreach ($tableDesc as $index=>$value)
         {
-            $title = $value['Field'];
+            $col = $value['Field'];
             $type = $value['Type'];
-            $formName = "insert_$title";
+            $inputName = "insert_$col";
 
-            if ($title == $pk || stristr($tableDesc[$index]['Extra'], 'CURRENT_TIMESTAMP')) {continue;}
+            if ($col == $pk || stristr($tableDesc[$index]['Extra'], 'CURRENT_TIMESTAMP')) {continue;}
 
             echo "<tr>";
-            echo "<td align=right><strong>$title</strong></td>";
+            echo "<td align=right><strong>$col</strong></td>";
             echo "<td>";
             if ( $type == "text" || $type == "longtext" )
             {
-                echo "<textarea rows=6 id='$formName' name='$formName' cols=40></textarea>";
+                echo "<textarea rows=6 id='$inputName' name='$inputName' cols=40></textarea>";
             }
             else
             {
-                echo "<input type='text' id='$formName' name='$formName' size=40>";
+                echo "<input type='text' id='$inputName' name='$inputName' size=40>";
             }
 
             $fkey = false; $ftable = false; $foptions = false;
-            if (array_key_exists($table, $this->foreignKeys) && array_key_exists($title, $this->foreignKeys[$table]))
+            if (array_key_exists($table, $this->foreignKeys) && array_key_exists($col, $this->foreignKeys[$table]))
             {
-                $fkey   = $this->foreignKeys[$table][$title][0];
-                $ftable = $this->foreignKeys[$table][$title][1];
-                $fname  = $this->foreignKeys[$table][$title][2];
-                $ddhtml = $this->getForeignKeyDropdownHtml($ftable, $fkey, $fname, $formName);
+                $fkey   = $this->foreignKeys[$table][$col][0];
+                $ftable = $this->foreignKeys[$table][$col][1];
+                $fname  = $this->foreignKeys[$table][$col][2];
+                $ddhtml = $this->getForeignKeyDropdownHtml($ftable, $fkey, $fname, $inputName);
                 echo $ddhtml;
             }
 
@@ -152,6 +152,7 @@ class CRUD
         $html .= "";
         return $html;
     }
+
 
     function insertRecord($params)
     {
@@ -215,6 +216,7 @@ class CRUD
         echo "</select>";
     }
 
+
     function showTableQueryFields($tableDesc)
     {
         echo "<table border=1>"; 
@@ -247,6 +249,7 @@ class CRUD
         }
         echo "</table>";
     }
+
 
     function showTableColumnSelect($tableDesc)
     {   
@@ -488,11 +491,21 @@ class CRUD
             else 
             { 
                 $type = $tableDesc[$col]['Type'];
-                $inputname = "edit_$col";
+                $inputName = "edit_$col";
                 if ( $type == "text" || $type == "longtext" )
-                    echo '<textarea rows="6" name="'.$inputname.'" cols="40">'.$value.'</textarea><br />';
+                    echo "<textarea rows=6 name='$inputName' id='$inputName' cols=60>$value</textarea>";
                 else
-                    echo '<input type="text" name="'.$inputname.'" size="40" value="'.$value.'"><br />';
+                    echo "<input type='text' name='$inputName' id='$inputName' size=40 value='$value'>";
+
+                $fkey = false; $ftable = false; $foptions = false;
+                if (array_key_exists($table, $this->foreignKeys) && array_key_exists($col, $this->foreignKeys[$table]))
+                {
+                    $fkey   = $this->foreignKeys[$table][$col][0];
+                    $ftable = $this->foreignKeys[$table][$col][1];
+                    $fname  = $this->foreignKeys[$table][$col][2];
+                    $ddhtml = $this->getForeignKeyDropdownHtml($ftable, $fkey, $fname, $inputName);
+                    echo $ddhtml;
+                }
 
                 echo '</td><td>';
                 echo $tableDesc[$col]['Type'];
