@@ -540,8 +540,8 @@ class CRUD
         if (isset($params['delete']))
         {
             $query = "DELETE from ".$table." WHERE $pk = ".$recordId;
-            $this->dbQuery($query);
-            echo "<font color=#882222>This record with $pk = ".$recordId." has been deleted!</font>";
+            $res = $this->dbQuery($query);
+            if ($res) echo "<font color=#882222>This record with $pk = ".$recordId." has been deleted!</font>";
             exit;
         }
 
@@ -570,7 +570,7 @@ class CRUD
         $result = mysqli_query($this->dbConn, $query);
         if (!$result)
         {
-            echo("Error description: " . mysqli_error());
+            echo("Error description: " . mysqli_error($this->dbConn));
             return false;
         }
 
