@@ -19,6 +19,7 @@
 {
 	border: 1px solid blue;
 	vertical-align: top;
+    text-align: left;
 	padding: 2px;
 	margin: 0px;
 }

@@ -614,13 +614,14 @@ class CRUD
                 $col = substr($label, 5);
                 $type = $tableDesc[$col]['Type'];
                 $isAlpha = (stristr($type, 'varchar') || stristr($type, 'text')) ? true : false;
-                if ($value == '' && $isAlpha) $sets[] = "$col = '$value'";
-                else                          $sets[] = "$col = NULL";
+                if ($value == '' && !$isAlpha) $sets[] = "$col = NULL";
+                else                           $sets[] = "$col = '$value'";
             }
         }    
         $query .= implode(", ", $sets);
         $query .= " WHERE $pk = $recordId LIMIT 1";
 
+        print "$query<br>";
         $res = $this->dbQuery($query);
         if (!$res) {print "<span style='background-color:#ff8888'>UPDATE QUERY ERROR</span><p>";}
         else       {print "<span style='background-color:#88ff88'>update successful</span><p>";}

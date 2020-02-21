@@ -1,15 +1,14 @@
 ## TODO
-- Config option to specify defining manual drop down list for any column.
-- Date picker for db type date (solution not that great)
-- Combine insert and edit code into one.
-- Text cutoff and/or warning on varchar size
-- Change query form to use <,>,= for numeric db types and date range for date types
-- Figure out why modDate is not auto-updating on edit (prob b/c of hidden input)
-- Logging option for history.  Log to file?
-- Simple security option?
 - check/uncheck all for column select
 - search all fields for phrase
 - quick search links (defined in config)
 - Utilize GET for custom queries
 - save most recent query fields in session?
+- Config option to specify defining manual drop down list for any column.
+- Date picker for db type date (solution not that great)
+- Combine insert and edit code into one.
+- Text cutoff and/or warning on varchar size
+- Change query form to use <,>,= for numeric db types and date range for date types
+- Logging option for history.  Log to file?
+- Simple security option?
 - Display foreign key readable names in query results
