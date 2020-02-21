@@ -113,17 +113,7 @@ class CRUD
             {
                 echo "<input type='text' id='$inputName' name='$inputName' size=40>";
             }
-
-            $fkey = false; $ftable = false; $foptions = false;
-            if (array_key_exists($table, $this->foreignKeys) && array_key_exists($col, $this->foreignKeys[$table]))
-            {
-                $fkey   = $this->foreignKeys[$table][$col][0];
-                $ftable = $this->foreignKeys[$table][$col][1];
-                $fname  = $this->foreignKeys[$table][$col][2];
-                $ddhtml = $this->getForeignKeyDropdownHtml($ftable, $fkey, $fname, $inputName);
-                echo $ddhtml;
-            }
-
+            $this->addForeignKeySelector($table, $col, $inputName);   
             echo "</td>";
             echo "<td align=left>$type</td>";
             echo "</tr>";
@@ -134,6 +124,19 @@ class CRUD
         echo "<input type='hidden' name='cmd' value='insertRecord'>";
         echo "<br><input class='button1' type='submit' value='Submit'>";
         echo "</FORM>";
+    }
+
+    function addForeignKeySelector($table, $col, $inputName)
+    {
+        $fkey = false; $ftable = false; $foptions = false;
+        if (array_key_exists($table, $this->foreignKeys) && array_key_exists($col, $this->foreignKeys[$table]))
+        {
+            $fkey   = $this->foreignKeys[$table][$col][0];
+            $ftable = $this->foreignKeys[$table][$col][1];
+            $fname  = $this->foreignKeys[$table][$col][2];
+            $ddhtml = $this->getForeignKeyDropdownHtml($ftable, $fkey, $fname, $inputName);
+            echo $ddhtml;
+        }
     }
 
     function getForeignKeyDropdownHtml($ftable, $fkey, $fname, $objName)
@@ -191,9 +194,9 @@ class CRUD
         echo "<form action='index.php' name='dataform' method='post' style='margin:0; padding:0;'>";
         echo "<input type=hidden name=cmd value='doQuery'>";
         echo "<input type=hidden name=table value='".$table."'>";
-        $this->showTableColumnSelect($tableDesc); 
+        $this->showTableColumnSelect($table, $tableDesc); 
         echo "<p>";
-        $this->showTableQueryFields($tableDesc);
+        $this->showTableQueryFields($table, $tableDesc);
         echo "<p>";
         // $this->showOrderBy($tableDesc);
         // echo "<p>";
@@ -216,8 +219,7 @@ class CRUD
         echo "</select>";
     }
 
-
-    function showTableQueryFields($tableDesc)
+    function showTableQueryFields($table, $tableDesc)
     {
         echo "<table border=1>"; 
         echo "<tr bgcolor=#abcdef><td colspan=99 align=left><b>Enter search criteria (assume 'like' search):</b></td></tr>";
@@ -225,13 +227,15 @@ class CRUD
         $i = 0;
         foreach ($tableDesc as $index=>$value)
         {
+            $col = $value['Field'];
+            $inputName = "TX".$col;
+
             if ($i == 0) {echo "<tr>";}
 
-            echo "<td bgcolor=#ffffee align=right>";        
-            echo $value['Field'];
-            echo ":&nbsp;&nbsp;</td>";
+            echo "<td bgcolor=#ffffee align=right>$col:&nbsp;&nbsp;</td>";
             echo "<td>";
-            echo "<input name='TX".$value['Field']."' value=''></input>&nbsp;";     
+            echo "<input id='$inputName' name='$inputName' value=''></input>&nbsp;"; 
+            $this->addForeignKeySelector($table, $col, $inputName);   
             echo "</td>";       
 
             if ($i == 1) {echo "</tr>\n";}
@@ -251,7 +255,7 @@ class CRUD
     }
 
 
-    function showTableColumnSelect($tableDesc)
+    function showTableColumnSelect($table, $tableDesc)
     {   
         echo "<table border=2>";   
         echo "<tr bgcolor=#abcdef><td colspan=99 align=left><b>Select columns to show:</b></td></tr>";
