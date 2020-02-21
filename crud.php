@@ -94,13 +94,16 @@ class CRUD
         echo "<FORM method=POST action='index.php'>";
         echo '<table border=1>';
         echo "<tr bgcolor=#abcdef><td colspan=99 align=center><b>Create new '$table' record</b></td></tr>";
-        foreach ($tableDesc as $index=>$value)
+        foreach ($tableDesc as $col=>$value)
         {
             $col = $value['Field'];
             $type = $value['Type'];
             $inputName = "insert_$col";
 
-            if ($col == $pk || stristr($tableDesc[$index]['Extra'], 'CURRENT_TIMESTAMP')) {continue;}
+            if (   $col == $pk 
+                || stristr($tableDesc[$col]['Extra'], 'CURRENT_TIMESTAMP')
+                || stristr($tableDesc[$col]['Default'], 'CURRENT_TIMESTAMP')
+            ) {continue;}
 
             echo "<tr>";
             echo "<td align=right><strong>$col</strong></td>";
@@ -108,6 +111,11 @@ class CRUD
             if ( $type == "text" || $type == "longtext" )
             {
                 echo "<textarea rows=6 id='$inputName' name='$inputName' cols=40></textarea>";
+            }
+            else if ($type == 'date')
+            {
+                echo "<input type='date' id='$inputName' name='$inputName' size=40>";
+                echo "<input type='button' value='now' onclick='setDateNow(\"$inputName\")'>";
             }
             else
             {
@@ -487,10 +495,12 @@ class CRUD
             echo '<td bgcolor=ffffee align="right"><strong>'.$col.'</strong></td>';
             echo '<td>';
 
-            if ($col == $pk || stristr($tableDesc[$col]['Extra'], 'CURRENT_TIMESTAMP')) 
+            if (   $col == $pk 
+                || stristr($tableDesc[$col]['Extra'], 'CURRENT_TIMESTAMP')
+                || stristr($tableDesc[$col]['Default'], 'CURRENT_TIMESTAMP'))
             {
                 echo $value;
-                echo '<input type="hidden" name="'.$col.'" value="'.$value.'"><br />';
+                if ($col == $pk) echo '<input type="hidden" name="'.$col.'" value="'.$value.'"><br>';
             }
             else 
             { 
@@ -559,6 +569,7 @@ class CRUD
             {
                 $name = substr($label, 5);
                 $query = "UPDATE $table SET $name = '$value' WHERE $pk = $recordId LIMIT 1";
+                print "$query<br>";
                 $res = $this->dbQuery($query);
                 if (!$res) {$result = false;}
             }
