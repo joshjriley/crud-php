@@ -1,10 +1,17 @@
-function setForeignKeyVal(dd, objName)
+function setValueFromDropdown(dd, objName)
 {
     var val = dd.value;
     var input = document.getElementById(objName);
     input.value = val;
 }
 
+
+function setDateNow(id)
+{
+    str = new Date().toISOString().split('T')[0];
+    document.getElementById(id).value = str;
+
+}
 
 function sortTable(n, tableId) 
 {

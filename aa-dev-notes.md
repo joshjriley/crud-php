@@ -1,8 +1,6 @@
 ## TODO
-- Auto-dropdown in query form for defined foreign keys.
-- Display foreign key readable names in query results
-- Date picker for db type date
-- Auto-dropdown for enumerated db columns
+- Date picker for db type date (solution not that great)
+- Text cutoff and/or warning on varchar size
 - Change query form to use <,>,= for numeric db types
 - Figure out why modDate is not auto-updating on edit (prob b/c of hidden input)
 - Config option to specify defining manual drop down list for any column.
@@ -13,3 +11,4 @@
 - quick search links (defined in config)
 - Utilize GET for custom queries
 - save most recent query fields in session?
+- Display foreign key readable names in query results

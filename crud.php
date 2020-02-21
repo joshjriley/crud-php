@@ -122,6 +122,7 @@ class CRUD
                 echo "<input type='text' id='$inputName' name='$inputName' size=40>";
             }
             $this->addForeignKeySelector($table, $col, $inputName);   
+            $this->addEnumSelector($table, $tableDesc, $col, $inputName);   
             echo "</td>";
             echo "<td align=left>$type</td>";
             echo "</tr>";
@@ -134,35 +135,51 @@ class CRUD
         echo "</FORM>";
     }
 
+    function addEnumSelector($table, $tableDesc, $col, $inputName)
+    {
+        $type = $tableDesc[$col]['Type'];
+        if (stristr($type, 'enum('))
+        {
+            preg_match_all('~\'(.*?)\'~', $type, $out);
+            echo $this->getDropdownHtml($inputName, $out[1], null, 'select...');
+        }
+    }
+
     function addForeignKeySelector($table, $col, $inputName)
     {
-        $fkey = false; $ftable = false; $foptions = false;
         if (array_key_exists($table, $this->foreignKeys) && array_key_exists($col, $this->foreignKeys[$table]))
         {
             $fkey   = $this->foreignKeys[$table][$col][0];
             $ftable = $this->foreignKeys[$table][$col][1];
             $fname  = $this->foreignKeys[$table][$col][2];
-            $ddhtml = $this->getForeignKeyDropdownHtml($ftable, $fkey, $fname, $inputName);
-            echo $ddhtml;
+
+            $query = "select $fkey, $fname from $ftable order by $fkey desc";
+            $rows = $this->dbQuery($query);
+            $options = array();
+            $values = array();
+            foreach ($rows as $row)
+            {
+                $options[] = $row[$fname];
+                $values[]  = $row[$fkey];
+            }
+            echo $this->getDropdownHtml($inputName, $options, $values, 'select foreign key...');
         }
     }
 
-    function getForeignKeyDropdownHtml($ftable, $fkey, $fname, $objName)
+    function getDropdownHtml($inputName, $options, $values=null, $defaultText=null)
     {
-        $query = "select $fkey, $fname from $ftable order by $fkey desc";
-        $rows = $this->dbQuery($query);
         $html = '';
-        $html .= "<select name='$objName' onchange='setForeignKeyVal(this, " . '"' . $objName . '"' . ");''>";
-        $html .= "<option value=''>select foreign key...</option>";
-        foreach ($rows as $row)
+        $html .= "<select name='$inputName' onchange='setValueFromDropdown(this, " . '"' . $inputName . '"' . ");''>";
+        if ($defaultText) $html .= "<option value=''>$defaultText</option>";
+        foreach ($options as $i=>$option)
         {
-            $val = $row[$fkey];
-            $name = $row[$fname];
-            $html .= "<option value='$val'>$val ($name)</option>";
+            $val = ($values) ? $values[$i] : $option;
+            $html .= "<option value='$val'>$option</option>";
         }
         $html .= "";
         return $html;
     }
+
 
 
     function insertRecord($params)
@@ -511,6 +528,7 @@ class CRUD
                 else
                     echo "<input type='text' name='$inputName' id='$inputName' size=40 value='$value'>";
 
+//todo: use function here
                 $fkey = false; $ftable = false; $foptions = false;
                 if (array_key_exists($table, $this->foreignKeys) && array_key_exists($col, $this->foreignKeys[$table]))
                 {
