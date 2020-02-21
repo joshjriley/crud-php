@@ -1,9 +1,10 @@
 ## TODO
-- Date picker for db type date (solution not that great)
-- Text cutoff and/or warning on varchar size
-- Change query form to use <,>,= for numeric db types
-- Figure out why modDate is not auto-updating on edit (prob b/c of hidden input)
 - Config option to specify defining manual drop down list for any column.
+- Date picker for db type date (solution not that great)
+- Combine insert and edit code into one.
+- Text cutoff and/or warning on varchar size
+- Change query form to use <,>,= for numeric db types and date range for date types
+- Figure out why modDate is not auto-updating on edit (prob b/c of hidden input)
 - Logging option for history.  Log to file?
 - Simple security option?
 - check/uncheck all for column select

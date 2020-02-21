@@ -92,12 +92,13 @@ class CRUD
         $pk = $this->getPrimaryKey($tableDesc);
 
         echo "<FORM method=POST action='index.php'>";
-        echo '<table border=1>';
+        echo '<table border=1 bgcolor=#dddddd>';
         echo "<tr bgcolor=#abcdef><td colspan=99 align=center><b>Create new '$table' record</b></td></tr>";
         foreach ($tableDesc as $col=>$value)
         {
             $col = $value['Field'];
             $type = $value['Type'];
+            $typeDisp = $type;
             $inputName = "insert_$col";
 
             if (   $col == $pk 
@@ -108,23 +109,29 @@ class CRUD
             echo "<tr>";
             echo "<td align=right><strong>$col</strong></td>";
             echo "<td>";
-            if ( $type == "text" || $type == "longtext" )
+            if (array_key_exists($table, $this->foreignKeys) && array_key_exists($col, $this->foreignKeys[$table]))
             {
-                echo "<textarea rows=6 id='$inputName' name='$inputName' cols=40></textarea>";
+                $this->addForeignKeySelector($table, $col, $inputName);   
+            }
+            else if (stristr($type, 'enum('))
+            {
+                $this->addEnumSelector($table, $tableDesc, $col, $inputName);
+                $typeDisp = 'enum';
+            }
+            else if ( $type == "text" || $type == "longtext" )
+            {
+                echo "<textarea rows=6 id='$inputName' name='$inputName' cols=60></textarea>";
             }
             else if ($type == 'date')
             {
                 echo "<input type='date' id='$inputName' name='$inputName' size=40>";
-                echo "<input type='button' value='now' onclick='setDateNow(\"$inputName\")'>";
             }
             else
             {
                 echo "<input type='text' id='$inputName' name='$inputName' size=40>";
             }
-            $this->addForeignKeySelector($table, $col, $inputName);   
-            $this->addEnumSelector($table, $tableDesc, $col, $inputName);   
             echo "</td>";
-            echo "<td align=left>$type</td>";
+            echo "<td align=left>$typeDisp</td>";
             echo "</tr>";
         }
 
@@ -135,38 +142,32 @@ class CRUD
         echo "</FORM>";
     }
 
-    function addEnumSelector($table, $tableDesc, $col, $inputName)
+    function addEnumSelector($table, $tableDesc, $col, $inputName, $value=null)
     {
         $type = $tableDesc[$col]['Type'];
-        if (stristr($type, 'enum('))
-        {
-            preg_match_all('~\'(.*?)\'~', $type, $out);
-            echo $this->getDropdownHtml($inputName, $out[1], null, 'select...');
-        }
+        preg_match_all('~\'(.*?)\'~', $type, $out);
+        echo $this->getDropdownHtml($inputName, $out[1], null, $value, 'select...');
     }
 
     function addForeignKeySelector($table, $col, $inputName)
     {
-        if (array_key_exists($table, $this->foreignKeys) && array_key_exists($col, $this->foreignKeys[$table]))
-        {
-            $fkey   = $this->foreignKeys[$table][$col][0];
-            $ftable = $this->foreignKeys[$table][$col][1];
-            $fname  = $this->foreignKeys[$table][$col][2];
+        $fkey   = $this->foreignKeys[$table][$col][0];
+        $ftable = $this->foreignKeys[$table][$col][1];
+        $fname  = $this->foreignKeys[$table][$col][2];
 
-            $query = "select $fkey, $fname from $ftable order by $fkey desc";
-            $rows = $this->dbQuery($query);
-            $options = array();
-            $values = array();
-            foreach ($rows as $row)
-            {
-                $options[] = $row[$fname];
-                $values[]  = $row[$fkey];
-            }
-            echo $this->getDropdownHtml($inputName, $options, $values, 'select foreign key...');
+        $query = "select $fkey, $fname from $ftable order by $fkey desc";
+        $rows = $this->dbQuery($query);
+        $options = array();
+        $values = array();
+        foreach ($rows as $row)
+        {
+            $options[] = $row[$fkey] . ' ('.$row[$fname].')';
+            $values[]  = $row[$fkey];
         }
+        echo $this->getDropdownHtml($inputName, $options, $values, null, 'select foreign key...');
     }
 
-    function getDropdownHtml($inputName, $options, $values=null, $defaultText=null)
+    function getDropdownHtml($inputName, $options, $values=null, $value=null, $defaultText=null)
     {
         $html = '';
         $html .= "<select name='$inputName' onchange='setValueFromDropdown(this, " . '"' . $inputName . '"' . ");''>";
@@ -174,7 +175,8 @@ class CRUD
         foreach ($options as $i=>$option)
         {
             $val = ($values) ? $values[$i] : $option;
-            $html .= "<option value='$val'>$option</option>";
+            $selected = ($value != null and $value == $val) ? " selected " : '';
+            $html .= "<option $selected value='$val'>$option</option>";
         }
         $html .= "";
         return $html;
@@ -214,7 +216,7 @@ class CRUD
         if (!isset($params['table'])) return;
 
         $table = $params['table'];
-        $tableDesc = $this->dbQuery("show full columns from $table");
+        $tableDesc = $this->getTableDesc($table, true);
 
         echo "<form action='index.php' name='dataform' method='post' style='margin:0; padding:0;'>";
         echo "<input type=hidden name=cmd value='doQuery'>";
@@ -253,14 +255,25 @@ class CRUD
         foreach ($tableDesc as $index=>$value)
         {
             $col = $value['Field'];
+            $type = $value['Type'];
             $inputName = "TX".$col;
 
             if ($i == 0) {echo "<tr>";}
 
             echo "<td bgcolor=#ffffee align=right>$col:&nbsp;&nbsp;</td>";
             echo "<td>";
-            echo "<input id='$inputName' name='$inputName' value=''></input>&nbsp;"; 
-            $this->addForeignKeySelector($table, $col, $inputName);   
+            if (array_key_exists($table, $this->foreignKeys) && array_key_exists($col, $this->foreignKeys[$table]))
+            {
+                $this->addForeignKeySelector($table, $col, $inputName);   
+            }
+            else if (stristr($type, 'enum('))
+            {
+                $this->addEnumSelector($table, $tableDesc, $col, $inputName);   
+            }
+            else
+            {
+                echo "<input id='$inputName' name='$inputName' value=''></input>&nbsp;"; 
+            }
             echo "</td>";       
 
             if ($i == 1) {echo "</tr>\n";}
@@ -330,6 +343,9 @@ class CRUD
 
     function buildQuery($params)
     {
+        $table = $params['table'];
+        $tableDesc = $this->getTableDesc($table, true);
+
         $qCols = "";
         $qWhere = "";
         $qOrderBy = "";
@@ -337,12 +353,12 @@ class CRUD
         $j = 0;
         
         reset ($params);
-        foreach ($params as $index=>$value)
+        foreach ($params as $key=>$value)
         {
-            $pre = substr ($index, 0, 2);
+            $pre = substr ($key, 0, 2);
             if ($pre == "CB") 
             {
-                $name = substr($index, 2);
+                $name = substr($key, 2);
                 if ($i > 0) $qCols .= ",";
                 $qCols .= $name;
                 $i++;
@@ -350,12 +366,15 @@ class CRUD
             else if ($pre == "TX")
             {
                 if (strlen($value) <= 0) continue;
-                $name = substr($index, 2);
+                $name = substr($key, 2);
+                $type = (array_key_exists($name, $tableDesc)) ? $tableDesc[$name]['Type'] : false;
+                $isEnum = ($type && stristr($type, 'enum(')) ? true : false;
                 if ($j > 0) $qWhere .= " and ";
-                $qWhere .=  $name . " rlike '(.)*" . addslashes(trim($value))."(.)*'";
+                if ($isEnum) $qWhere .=  $name . " = '" . addslashes(trim($value))."'";
+                else         $qWhere .=  $name . " like '%" . addslashes(trim($value))."%'";
                 $j++;
             }
-            else if ($index == "orderBy")
+            else if ($key == "orderBy")
             {
                 $qOrderBy = "order by " . addslashes($value);
             }
@@ -504,14 +523,16 @@ class CRUD
         echo "<input type=hidden name=cmd value='updateRecord'>";
         echo "<input type=hidden name=recordId value='$id'>";
         echo "<input type=hidden name=table value='$table'>";
-        echo '<table border="1">';
+        echo '<table border="1" bgcolor=#dddddd>';
         echo "<tr bgcolor=#abcdef><td colspan=99 align=center><b>Edit '$table' record #$id</b></td></tr>";
         foreach ($row as $col=>$value)
         {
-            echo '<tr>';
-            echo '<td bgcolor=ffffee align="right"><strong>'.$col.'</strong></td>';
-            echo '<td>';
+            $type = $tableDesc[$col]['Type'];
+            $typeDisp = $type;
 
+            echo '<tr>';
+            echo '<td align="right"><strong>'.$col.'</strong></td>';
+            echo '<td>';
             if (   $col == $pk 
                 || stristr($tableDesc[$col]['Extra'], 'CURRENT_TIMESTAMP')
                 || stristr($tableDesc[$col]['Default'], 'CURRENT_TIMESTAMP'))
@@ -521,28 +542,32 @@ class CRUD
             }
             else 
             { 
-                $type = $tableDesc[$col]['Type'];
                 $inputName = "edit_$col";
-                if ( $type == "text" || $type == "longtext" )
-                    echo "<textarea rows=6 name='$inputName' id='$inputName' cols=60>$value</textarea>";
-                else
-                    echo "<input type='text' name='$inputName' id='$inputName' size=40 value='$value'>";
-
-//todo: use function here
-                $fkey = false; $ftable = false; $foptions = false;
                 if (array_key_exists($table, $this->foreignKeys) && array_key_exists($col, $this->foreignKeys[$table]))
                 {
-                    $fkey   = $this->foreignKeys[$table][$col][0];
-                    $ftable = $this->foreignKeys[$table][$col][1];
-                    $fname  = $this->foreignKeys[$table][$col][2];
-                    $ddhtml = $this->getForeignKeyDropdownHtml($ftable, $fkey, $fname, $inputName);
-                    echo $ddhtml;
+                    $this->addForeignKeySelector($table, $col, $inputName);   
+                }
+                else if (stristr($type, 'enum('))
+                {
+                    $this->addEnumSelector($table, $tableDesc, $col, $inputName, $value);
+                    $typeDisp = 'enum';
+                }
+                else if ($type == 'date')
+                {
+                    echo "<input type='date' id='$inputName' name='$inputName' size=40 value='$value'>";
+                }
+                else if ( $type == "text" || $type == "longtext" )
+                {
+                    echo "<textarea rows=6 name='$inputName' id='$inputName' cols=60>$value</textarea>";
+                }
+                else
+                {
+                    echo "<input type='text' name='$inputName' id='$inputName' size=40 value='$value'>";
                 }
 
-                echo '</td><td>';
-                echo $tableDesc[$col]['Type'];
             }
             echo '</td>';
+            echo "<td>$typeDisp</td>";
             echo '</tr>';
         }
 
@@ -566,7 +591,7 @@ class CRUD
         $table = $params['table'];
         $recordId = $params['recordId'];
 
-        $tableDesc = $this->dbQuery("show full columns from $table");
+        $tableDesc = $this->getTableDesc($table, true);
         $pk = $this->getPrimaryKey($tableDesc);
 
         if (isset($params['delete']))
@@ -578,23 +603,27 @@ class CRUD
         }
 
         // Build and query database with the updates based on posted variables
-        //TODO: make this one query
         $result = true;
+        $query = "update $table set ";
+        $sets = array();
         foreach ($params as $label => $value)
         {
             $pre = substr ($label, 0, 5);
             if ($pre == "edit_") 
             {
-                $name = substr($label, 5);
-                $query = "UPDATE $table SET $name = '$value' WHERE $pk = $recordId LIMIT 1";
-                print "$query<br>";
-                $res = $this->dbQuery($query);
-                if (!$res) {$result = false;}
+                $col = substr($label, 5);
+                $type = $tableDesc[$col]['Type'];
+                $isAlpha = (stristr($type, 'varchar') || stristr($type, 'text')) ? true : false;
+                if ($value == '' && $isAlpha) $sets[] = "$col = '$value'";
+                else                          $sets[] = "$col = NULL";
             }
         }    
+        $query .= implode(", ", $sets);
+        $query .= " WHERE $pk = $recordId LIMIT 1";
 
-        if (!$result) {print "<span style='background-color:#ff8888'>UPDATE QUERY ERROR</span><p>";}
-        else          {print "<span style='background-color:#88ff88'>update successful</span><p>";}
+        $res = $this->dbQuery($query);
+        if (!$res) {print "<span style='background-color:#ff8888'>UPDATE QUERY ERROR</span><p>";}
+        else       {print "<span style='background-color:#88ff88'>update successful</span><p>";}
     }
 
     function dbQuery($query)
