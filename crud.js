@@ -13,6 +13,20 @@ function setDateNow(id)
 
 }
 
+
+function checkAll(elm) 
+{
+    var inputs = document.getElementsByTagName('input');
+    for (var i = 0; i < inputs.length; i++) 
+    {
+        var input = inputs[i];
+        if (input.type != 'checkbox') {continue;}
+        if (input.id.indexOf('CB') != 0) {continue;}
+        inputs[i].checked = elm.checked;
+    }
+ }
+
+
 function sortTable(n, tableId) 
 {
     var shouldSwitch = 0;

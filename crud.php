@@ -300,7 +300,10 @@ class CRUD
     function showTableColumnSelect($table, $tableDesc)
     {   
         echo "<table border=2>";   
-        echo "<tr bgcolor=#abcdef><td colspan=99 align=left><b>Select columns to show:</b></td></tr>";
+        echo "<tr bgcolor=#abcdef><td colspan=99 align=left>";
+        echo "<b>Select columns to show:</b>";
+        echo " &nbsp; <input type='checkbox' checked onchange='checkAll(this);' ";
+        echo "</td></tr>";
 
         reset ($tableDesc);
         $i = 0;
@@ -310,8 +313,8 @@ class CRUD
             if ($i == 0) {echo "<tr>";}
             
             echo "<td bgcolor=#eeffff>";
-            echo "<input type='checkbox' name='CB".$value['Field'];
-            echo "'checked >&nbsp;".$value['Field']."</input>";
+            echo "<input type='checkbox' name='CB".$value['Field']."' id='CB".$value['Field']."' ";
+            echo " checked >&nbsp;".$value['Field']."</input>";
             echo "</td>";       
 
             if ($i == 4)

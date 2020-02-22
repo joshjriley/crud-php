@@ -1,15 +1,15 @@
 ## TODO
-- color coding cell config
-- compact view option (ie one line with cutoffs, click to expand)
 - check/uncheck all for column select
+- save most recent query fields in session?  (need reset btn)
+- compact view option (ie one line with cutoffs, click to expand)
 - search all fields for phrase
 - quick search links (defined in config)
 - Utilize GET for custom queries
-- save most recent query fields in session?
 - Config option to specify defining manual drop down list for any column.
 - Date picker for db type date (solution not that great)
 - Combine insert and edit code into one.
 - Text cutoff and/or warning on varchar size
 - Logging option for history.  Log to file?
 - Simple security option?
+- sort by number if col is numeric
 - Display foreign key readable names in query results
