@@ -25,5 +25,11 @@ $dbForeignKeys = array(
 );
 
 
+$dbColors = array(
+	'table1' => array(
+		'key1' => array('val1'=>'#rrggbb', 'val2'=>'#rrggbb')
+	)
+);
+
 ?>
 

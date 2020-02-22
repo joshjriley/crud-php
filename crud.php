@@ -15,7 +15,7 @@ class CRUD
     
     function __construct()
     {
-        global $dbServer, $dbName, $dbUser, $dbPass, $dbTables, $dbForeignKeys;
+        global $dbServer, $dbName, $dbUser, $dbPass, $dbTables, $dbForeignKeys, $dbColors;
         global $scriptPath, $pageTitle;
 
         $this->dbServer = $dbServer;
@@ -24,6 +24,7 @@ class CRUD
         $this->dbPass   = $dbPass;
         $this->dbTables = $dbTables;
         $this->foreignKeys = $dbForeignKeys;
+        $this->dbColors = $dbColors;
         $this->pageTitle    = $pageTitle;
     }
 
@@ -393,7 +394,6 @@ class CRUD
         $qWhere = (strlen($qWhere) > 0) ? " where $qWhere " : "";
 
         $query = "select $qCols from $params[table] $qWhere $qOrderBy";
-        print "$query<br>";
         return $query;
     }
 
@@ -462,17 +462,20 @@ class CRUD
         foreach ($results as $row)
         {
             $id = $row[$pk];
-            if ($i % 2 == 0) $bgcolor = "#eeffff";
-            else             $bgcolor = "#ffffee";
-            echo "<tr bgcolor=$bgcolor align=center>";
+            echo "<tr align=center>";
             ++$i;
 
             echo "<td><a href='index.php?table=$table&cmd=editRecord&recordId=$id'><button class='button1'>edit</button></a></td>";
             foreach ($fields as $fld)
             {
                 $val = $row[$fld];
+                $val = htmlspecialchars_decode($val);
+                $bgcolor = '';
+                if (   array_key_exists($table, $this->dbColors) 
+                    && array_key_exists($fld, $this->dbColors[$table])
+                    && array_key_exists($val, $this->dbColors[$table][$fld])) {$bgcolor = 'bgcolor='.$this->dbColors[$table][$fld][$val];}
                 $style = ($tableDesc[$fld]['Type'] == 'text') ? ' style="max-width:400px;" ' : '';
-                echo "<td $style>$val</td>";
+                echo "<td $bgcolor $style>$val</td>";
             }
             echo "</tr>";
         }
