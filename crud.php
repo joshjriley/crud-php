@@ -170,7 +170,7 @@ class CRUD
     function getDropdownHtml($inputName, $options, $values=null, $value=null, $defaultText=null)
     {
         $html = '';
-        $html .= "<select name='$inputName' onchange='setValueFromDropdown(this, " . '"' . $inputName . '"' . ");''>";
+        $html .= "<select name='$inputName'>";
         if ($defaultText) $html .= "<option value=''>$defaultText</option>";
         foreach ($options as $i=>$option)
         {
@@ -190,18 +190,20 @@ class CRUD
         $this->showTableSelectForm($params);
 
         $table = $params['table'];
-        $query = "INSERT INTO `$table` set";
-        $i=0;
+        $query = "INSERT INTO `$table` set ";
+        $sets = array();
         foreach ($params as $label => $value)
         {
             if ($value == "") {continue;}
+            $value = htmlentities($value, ENT_QUOTES, 'UTF-8');
             if (substr($label, 0, 7) == "insert_") 
             {
-                $name = substr($label, 7);
-                if ($i++ > 0) {$query .= ', ';}
-                $query .= " `$name`='$value' ";
+                $col = substr($label, 7);
+                $sets[] = "$col = '$value'";
             }
         }
+        $query .= implode(", ", $sets);
+
         $result = $this->dbQuery($query);
         if (!$result) {print "<font color='#880000'>INSERT QUERY ERROR!</font><br>";}
         else          {print "<font color='#008800'>insert successful</font><br>";}
@@ -614,6 +616,7 @@ class CRUD
                 $col = substr($label, 5);
                 $type = $tableDesc[$col]['Type'];
                 $isAlpha = (stristr($type, 'varchar') || stristr($type, 'text')) ? true : false;
+                $value = htmlentities($value, ENT_QUOTES, 'UTF-8');
                 if ($value == '' && !$isAlpha) $sets[] = "$col = NULL";
                 else                           $sets[] = "$col = '$value'";
             }
@@ -621,15 +624,16 @@ class CRUD
         $query .= implode(", ", $sets);
         $query .= " WHERE $pk = $recordId LIMIT 1";
 
-        print "$query<br>";
         $res = $this->dbQuery($query);
         if (!$res) {print "<span style='background-color:#ff8888'>UPDATE QUERY ERROR</span><p>";}
         else       {print "<span style='background-color:#88ff88'>update successful</span><p>";}
     }
 
+
     function dbQuery($query)
     {
         $this->dbConnect();
+
         $result = mysqli_query($this->dbConn, $query);
         if (!$result)
         {
