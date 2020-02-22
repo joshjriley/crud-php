@@ -31,6 +31,7 @@ class CRUD
 
     function start()
     {
+        
         $params = array_merge($_GET, $_POST);
         if (isset($params['cmd']))
         {
@@ -213,6 +214,7 @@ class CRUD
 
     function showQueryTableForm($params)
     {
+print_r($_SESSION);
         $this->printPageHeader();
         $this->showTableSelectForm($params);
 
@@ -260,6 +262,7 @@ class CRUD
             $col = $value['Field'];
             $type = $value['Type'];
             $inputName = "TX".$col;
+            $value = (array_key_exists($inputName, $_SESSION['queryTXs'])) ? $_SESSION['queryTXs'][$inputName] : '';
 
             if ($i == 0) {echo "<tr>";}
 
@@ -271,11 +274,11 @@ class CRUD
             }
             else if (stristr($type, 'enum('))
             {
-                $this->addEnumSelector($table, $tableDesc, $col, $inputName);   
+                $this->addEnumSelector($table, $tableDesc, $col, $inputName, $value);   
             }
             else
             {
-                echo "<input id='$inputName' name='$inputName' value=''></input>&nbsp;"; 
+                echo "<input id='$inputName' name='$inputName' value='$value'></input>&nbsp;"; 
             }
             echo "</td>";       
 
@@ -292,7 +295,8 @@ class CRUD
             }
             echo "</tr>";
         }
-        echo "<tr><th>custom where:</th><td colspan=99><input id='customWhere' name='customWhere' value='' size=60></input></td></tr>";
+        $value = (array_key_exists('customWhere', $_SESSION['queryTXs'])) ? $_SESSION['queryTXs']['customWhere'] : '';
+        echo "<tr><th>custom where:</th><td colspan=99><input id='customWhere' name='customWhere' value='$value' size=60></input></td></tr>";
         echo "</table>";
     }
 
@@ -312,9 +316,11 @@ class CRUD
         {
             if ($i == 0) {echo "<tr>";}
             
+            $id = "CB".$value['Field'];
+            $checked = (array_key_exists($id, $_SESSION['queryCBs'])) ? ' checked ' : '';
             echo "<td bgcolor=#eeffff>";
-            echo "<input type='checkbox' name='CB".$value['Field']."' id='CB".$value['Field']."' ";
-            echo " checked >&nbsp;".$value['Field']."</input>";
+            echo "<input type='checkbox' name='$id' id='$id' ";
+            echo " $checked >&nbsp;".$value['Field']."</input>";
             echo "</td>";       
 
             if ($i == 4)
@@ -359,6 +365,9 @@ class CRUD
         $i = 0; 
         $j = 0;
         
+        $_SESSION['queryCBs'] = array();
+        $_SESSION['queryTXs'] = array();
+
         reset ($params);
         foreach ($params as $key=>$value)
         {
@@ -369,6 +378,7 @@ class CRUD
                 if ($i > 0) $qCols .= ",";
                 $qCols .= $name;
                 $i++;
+                $_SESSION['queryCBs'][$key] = 1;
             }
             else if ($pre == "TX" || $key == 'customWhere')
             {
@@ -387,6 +397,7 @@ class CRUD
                     else                $qWhere .= $name . " like '%" . addslashes(trim($value))."%'";
                 }
                 $j++;
+                $_SESSION['queryTXs'][$key] = $value;
             }
             else if ($key == "orderBy")
             {
