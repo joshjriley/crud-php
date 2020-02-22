@@ -1,4 +1,6 @@
 ## TODO
+- color coding cell config
+- compact view option (ie one line with cutoffs, click to expand)
 - check/uncheck all for column select
 - search all fields for phrase
 - quick search links (defined in config)
@@ -8,7 +10,6 @@
 - Date picker for db type date (solution not that great)
 - Combine insert and edit code into one.
 - Text cutoff and/or warning on varchar size
-- Change query form to use <,>,= for numeric db types and date range for date types
 - Logging option for history.  Log to file?
 - Simple security option?
 - Display foreign key readable names in query results

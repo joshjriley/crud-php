@@ -250,7 +250,7 @@ class CRUD
 
     function showTableQueryFields($table, $tableDesc)
     {
-        echo "<table border=1>"; 
+        echo "<table border=1 bgcolor=#dddddd>"; 
         echo "<tr bgcolor=#abcdef><td colspan=99 align=left><b>Enter search criteria (assume 'like' search):</b></td></tr>";
         reset ($tableDesc);
         $i = 0;
@@ -262,7 +262,7 @@ class CRUD
 
             if ($i == 0) {echo "<tr>";}
 
-            echo "<td bgcolor=#ffffee align=right>$col:&nbsp;&nbsp;</td>";
+            echo "<td align=right>$col:&nbsp;&nbsp;</td>";
             echo "<td>";
             if (array_key_exists($table, $this->foreignKeys) && array_key_exists($col, $this->foreignKeys[$table]))
             {
@@ -291,6 +291,7 @@ class CRUD
             }
             echo "</tr>";
         }
+        echo "<tr><th>custom where:</th><td colspan=99><input id='customWhere' name='customWhere' value='' size=60></input></td></tr>";
         echo "</table>";
     }
 
@@ -365,15 +366,22 @@ class CRUD
                 $qCols .= $name;
                 $i++;
             }
-            else if ($pre == "TX")
+            else if ($pre == "TX" || $key == 'customWhere')
             {
                 if (strlen($value) <= 0) continue;
-                $name = substr($key, 2);
-                $type = (array_key_exists($name, $tableDesc)) ? $tableDesc[$name]['Type'] : false;
-                $isEnum = ($type && stristr($type, 'enum(')) ? true : false;
                 if ($j > 0) $qWhere .= " and ";
-                if ($isEnum) $qWhere .=  $name . " = '" . addslashes(trim($value))."'";
-                else         $qWhere .=  $name . " like '%" . addslashes(trim($value))."%'";
+                if ($key == 'customWhere')
+                {
+                    $qWhere .= addslashes(trim($value));
+                }
+                else
+                {
+                    $name = substr($key, 2);
+                    $type = (array_key_exists($name, $tableDesc)) ? $tableDesc[$name]['Type'] : false;
+                    $isEnum = ($type && stristr($type, 'enum(')) ? true : false;
+                    if      ($isEnum)   $qWhere .= $name . " = '" . addslashes(trim($value))."'";
+                    else                $qWhere .= $name . " like '%" . addslashes(trim($value))."%'";
+                }
                 $j++;
             }
             else if ($key == "orderBy")
@@ -385,6 +393,7 @@ class CRUD
         $qWhere = (strlen($qWhere) > 0) ? " where $qWhere " : "";
 
         $query = "select $qCols from $params[table] $qWhere $qOrderBy";
+        print "$query<br>";
         return $query;
     }
 
