@@ -1,5 +1,6 @@
 ## TODO
-- check/uncheck all for column select
+- session timeout
+- detect http/s link
 - need query form reset
 - save query form vals per table in session?
 - compact view option (ie one line with cutoffs, click to expand)

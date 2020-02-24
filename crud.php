@@ -31,9 +31,6 @@ class CRUD
 
     function start()
     {
-        if (!isset($_SESSION['queryCBs'])) $_SESSION['queryCBs'] = array();
-        if (!isset($_SESSION['queryTXs'])) $_SESSION['queryTXs'] = array();
-
         $params = array_merge($_GET, $_POST);
         if (isset($params['cmd']))
         {
@@ -44,10 +41,27 @@ class CRUD
             else if ($params['cmd'] == 'insertRecord') {$this->insertRecord($params);}
             else if ($params['cmd'] == 'editRecord')   {$this->showEditRecordForm($params);}
             else if ($params['cmd'] == 'updateRecord') {$this->updateRecord($params);}
+            else if ($params['cmd'] == 'selectTable')  {$this->showQueryTableForm($params);}
         }
-        else {$this->showQueryTableForm($params);}
+        else 
+        {
+            $this->resetSessionVars();
+            $this->showQueryTableForm($params);
+        }
     }
 
+
+    function resetSessionVars()
+    {
+        session_destroy();
+        session_start();
+
+        $_SESSION['params'] = array();
+        foreach ($this->dbTables as $table)
+        {
+            $_SESSION['params'][$table] = array();
+        }
+    }
 
     function printPageHeader()
     {
@@ -65,7 +79,8 @@ class CRUD
         echo "<a href='index.php' style='text-decoration:none'>".$this->pageTitle."</a>";
         echo "</td>";
 
-        echo "<form action='index.php' method='GET' style='margin:0; padding:0; display:inline;'>";
+        echo "<form action='index.php' method='POST' style='margin:0; padding:0; display:inline;'>";
+        echo "<input type='hidden' name='cmd' value='selectTable'>";
         echo "<td><b>TABLE: </b><select name='table' onchange='this.form.submit();'>";
         echo "<option disabled selected value> -- select an option -- </option>";
         foreach ($this->dbTables as $dbTable)
@@ -187,7 +202,6 @@ class CRUD
     }
 
 
-
     function insertRecord($params)
     {
         $this->printPageHeader();
@@ -233,8 +247,9 @@ class CRUD
         echo "<p>";
         // $this->showOrderBy($tableDesc);
         // echo "<p>";
-        echo "<input type='checkbox' name='export' value='export'/> Export to file<p>";
-        echo "<input class='button1' type=submit value='Submit query'>";
+        echo "<input type='checkbox' name='export' value='export'/> Export to file &nbsp; ";
+        echo "<input type='reset' value='clear form'> &nbsp; ";
+        echo "<p><input class='button1' type=submit value='Submit query'>";
         echo "</form>";
     }
 
@@ -252,18 +267,27 @@ class CRUD
         echo "</select>";
     }
 
+
+    function getSavedSessionVal($table, $key)
+    {
+        $val = null;
+        if (array_key_exists($key, $_SESSION['params'][$table])) $val = $_SESSION['params'][$table][$key];
+        return $val;
+    }
+
+
     function showTableQueryFields($table, $tableDesc)
     {
         echo "<table border=1 bgcolor=#dddddd>"; 
         echo "<tr bgcolor=#abcdef><td colspan=99 align=left><b>Enter search criteria (assume 'like' search):</b></td></tr>";
-        reset ($tableDesc);
         $i = 0;
-        foreach ($tableDesc as $index=>$value)
+        foreach ($tableDesc as $index=>$desc)
         {
-            $col = $value['Field'];
-            $type = $value['Type'];
+            $col  = $desc['Field'];
+            $type = $desc['Type'];
             $inputName = "TX".$col;
-            $value = (array_key_exists($inputName, $_SESSION['queryTXs'])) ? $_SESSION['queryTXs'][$inputName] : '';
+            $value = $this->getSavedSessionVal($table, $inputName);
+            $value = ($value != null) ? $value : '';
 
             if ($i == 0) {echo "<tr>";}
 
@@ -296,7 +320,9 @@ class CRUD
             }
             echo "</tr>";
         }
-        $value = (array_key_exists('customWhere', $_SESSION['queryTXs'])) ? $_SESSION['queryTXs']['customWhere'] : '';
+
+        $value = $this->getSavedSessionVal($table, 'customWhere');
+        if ($value == null) $value = '';
         echo "<tr><th>custom where:</th><td colspan=99><input id='customWhere' name='customWhere' value='$value' size=60></input></td></tr>";
         echo "</table>";
     }
@@ -318,7 +344,8 @@ class CRUD
             if ($i == 0) {echo "<tr>";}
             
             $id = "CB".$value['Field'];
-            $checked = (array_key_exists($id, $_SESSION['queryCBs'])) ? ' checked ' : '';
+            $checked = $this->getSavedSessionVal($table, $id);
+            $checked = (empty($_SESSION['params'][$table]) || $checked != null) ? ' checked ' : '';
             echo "<td bgcolor=#eeffff>";
             echo "<input type='checkbox' name='$id' id='$id' ";
             echo " $checked >&nbsp;".$value['Field']."</input>";
@@ -366,10 +393,9 @@ class CRUD
         $i = 0; 
         $j = 0;
         
-        $_SESSION['queryCBs'] = array();
-        $_SESSION['queryTXs'] = array();
+        if (isset($params['saved'])) $params = $_SESSION['params'][$table];
+        else                         $_SESSION['params'][$table] = $params;
 
-        reset ($params);
         foreach ($params as $key=>$value)
         {
             $pre = substr ($key, 0, 2);
@@ -379,7 +405,6 @@ class CRUD
                 if ($i > 0) $qCols .= ",";
                 $qCols .= $name;
                 $i++;
-                $_SESSION['queryCBs'][$key] = 1;
             }
             else if ($pre == "TX" || $key == 'customWhere')
             {
@@ -398,7 +423,6 @@ class CRUD
                     else                $qWhere .= $name . " like '%" . addslashes(trim($value))."%'";
                 }
                 $j++;
-                $_SESSION['queryTXs'][$key] = $value;
             }
             else if ($key == "orderBy")
             {
@@ -653,7 +677,10 @@ class CRUD
 
         $res = $this->dbQuery($query);
         if (!$res) {print "<span style='background-color:#ff8888'>UPDATE QUERY ERROR</span><p>";}
-        else       {print "<span style='background-color:#88ff88'>update successful</span><p>";}
+        else       {print "<span style='background-color:#88ff88'>successfully updated record #$recordId</span><p>";}
+
+        echo "<li><a href='index.php?table=$table&cmd=editRecord&recordId=$recordId'>edit record #$recordId</a>";
+        echo "<li><a href='index.php?table=$table&cmd=doQuery&saved=1'>last query result</a>";
     }
 
 
