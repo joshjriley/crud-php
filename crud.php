@@ -31,7 +31,9 @@ class CRUD
 
     function start()
     {
-        
+        if (!isset($_SESSION['queryCBs'])) $_SESSION['queryCBs'] = array();
+        if (!isset($_SESSION['queryTXs'])) $_SESSION['queryTXs'] = array();
+
         $params = array_merge($_GET, $_POST);
         if (isset($params['cmd']))
         {
@@ -214,7 +216,6 @@ class CRUD
 
     function showQueryTableForm($params)
     {
-print_r($_SESSION);
         $this->printPageHeader();
         $this->showTableSelectForm($params);
 

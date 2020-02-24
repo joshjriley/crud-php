@@ -1,6 +1,7 @@
 ## TODO
 - check/uncheck all for column select
-- save most recent query fields in session?  (need reset btn)
+- need query form reset
+- save query form vals per table in session?
 - compact view option (ie one line with cutoffs, click to expand)
 - search all fields for phrase
 - quick search links (defined in config)
