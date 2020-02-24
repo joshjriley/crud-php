@@ -31,6 +31,8 @@ class CRUD
 
     function start()
     {
+        $this->checkSessionTimeout();
+
         $params = array_merge($_GET, $_POST);
         if (isset($params['cmd']))
         {
@@ -48,6 +50,20 @@ class CRUD
             $this->resetSessionVars();
             $this->showQueryTableForm($params);
         }
+    }
+
+
+    function checkSessionTimeout()
+    {
+        $timeout = 60 * 60 * 24 * 5; 
+        if (isset($_SESSION['timeout'])) {
+            $duration = time() - (int)$_SESSION['timeout'];
+            if($duration > $timeout) {
+                session_destroy();
+                session_start();
+            }
+        }
+        $_SESSION['timeout'] = time();        
     }
 
 
