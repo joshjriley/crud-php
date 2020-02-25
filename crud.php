@@ -466,7 +466,6 @@ class CRUD
         $qWhere = (strlen($qWhere) > 0) ? " where $qWhere " : "";
 
         $query = "select $qCols from $params[table] $qWhere $qOrderBy";
-        print "q: $query<br>";
         return $query;
     }
 
