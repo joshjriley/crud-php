@@ -24,7 +24,35 @@ function checkAll(elm)
         if (input.id.indexOf('CB') != 0) {continue;}
         inputs[i].checked = elm.checked;
     }
- }
+}
+
+
+function clearForm(form)
+{
+    var elements = form.elements;
+    form.reset();
+    for(i=0; i<elements.length; i++) 
+    {
+        field_type = elements[i].type.toLowerCase();
+        switch(field_type) 
+        {
+            case "text":
+            case "password":
+            case "textarea":
+            case "hidden":
+              elements[i].value = "";
+              break;
+            // case "radio":
+            // case "checkbox":
+            //     elements[i].checked = false;
+            // break;
+            case "select-one":
+            case "select-multi":
+                elements[i].selectedIndex = 0;
+            break;
+        }
+    }
+}
 
 
 function sortTable(n, tableId) 

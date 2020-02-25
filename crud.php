@@ -240,8 +240,10 @@ class CRUD
         $query .= implode(", ", $sets);
 
         $result = $this->dbQuery($query);
-        if (!$result) {print "<font color='#880000'>INSERT QUERY ERROR!</font><br>";}
-        else          {print "<font color='#008800'>insert successful</font><br>";}
+        if (!$result) {print "<font color='#880000'>INSERT QUERY ERROR!</font><p>";}
+        else          {print "<font color='#008800'>insert successful</font><p>";}
+
+        echo "<li><a href='index.php?table=$table&cmd=doQuery&saved=1'>last query result</a>";
     }
 
 
@@ -265,7 +267,7 @@ class CRUD
         // $this->showOrderBy($tableDesc);
         // echo "<p>";
         echo "<input type='checkbox' name='export' value='export'/> Export to file &nbsp; ";
-        echo "<input type='reset' value='clear form'> &nbsp; ";
+        echo "<input type='button' value='clear form' onclick='clearForm(this.form);'> &nbsp; ";
         echo "<p><input class='button1' type=submit value='Submit query'>";
         echo "</form>";
     }
@@ -304,7 +306,6 @@ class CRUD
             $type = $desc['Type'];
             $inputName = "TX".$col;
             $value = $this->getSavedSessionVal($table, $inputName);
-            $value = ($value != null) ? $value : '';
 
             if ($i == 0) {echo "<tr>";}
 
@@ -339,8 +340,11 @@ class CRUD
         }
 
         $value = $this->getSavedSessionVal($table, 'customWhere');
-        if ($value == null) $value = '';
         echo "<tr><th>custom where:</th><td colspan=99><input id='customWhere' name='customWhere' value='$value' size=60></input></td></tr>";
+
+        $value = $this->getSavedSessionVal($table, 'searchAll');
+        echo "<tr><th>search all:</th><td colspan=99><input id='searchAll' name='searchAll' value='$value' size=60></input></td></tr>";
+
         echo "</table>";
     }
 
@@ -392,6 +396,10 @@ class CRUD
 
     function showQueryTableResults($params)
     {
+        $table = $params['table'];
+        if (isset($params['saved'])) $params = $_SESSION['params'][$table];
+        else                         $_SESSION['params'][$table] = $params;
+
         $query = $this->buildQuery($params);
         $data = $this->dbQuery($query);
         if (isset($params['export'])) {$this->exportQueryResults($data, $params);}
@@ -409,9 +417,6 @@ class CRUD
         $qOrderBy = "";
         $i = 0; 
         $j = 0;
-        
-        if (isset($params['saved'])) $params = $_SESSION['params'][$table];
-        else                         $_SESSION['params'][$table] = $params;
 
         foreach ($params as $key=>$value)
         {
@@ -423,13 +428,20 @@ class CRUD
                 $qCols .= $name;
                 $i++;
             }
-            else if ($pre == "TX" || $key == 'customWhere')
+            else if ($pre == "TX" || $key == 'customWhere' || $key == 'searchAll')
             {
                 if (strlen($value) <= 0) continue;
                 if ($j > 0) $qWhere .= " and ";
                 if ($key == 'customWhere')
                 {
                     $qWhere .= addslashes(trim($value));
+                }
+                else if ($key == 'searchAll')
+                {
+                    $tmp = array();
+                    foreach ($tableDesc as $col=>$foo)
+                        $tmp[] = "$col like '%$value%'";
+                    $qWhere .= '(' . implode(' or ', $tmp) . ')';
                 }
                 else
                 {
@@ -450,6 +462,7 @@ class CRUD
         $qWhere = (strlen($qWhere) > 0) ? " where $qWhere " : "";
 
         $query = "select $qCols from $params[table] $qWhere $qOrderBy";
+        print "q: $query<br>";
         return $query;
     }
 
