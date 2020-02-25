@@ -1,10 +1,5 @@
 ## TODO
-- session timeout
-- detect http/s link
-- need query form reset
-- save query form vals per table in session?
 - compact view option (ie one line with cutoffs, click to expand)
-- search all fields for phrase
 - quick search links (defined in config)
 - Utilize GET for custom queries
 - Config option to specify defining manual drop down list for any column.

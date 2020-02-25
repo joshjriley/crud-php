@@ -137,6 +137,9 @@ class CRUD
             $typeDisp = $type;
             $inputName = "insert_$col";
 
+            $match = preg_match('#\((\d*?)\)#', $type, $matches);
+            $maxlength = ($match) ? 'maxlength='.$matches[1] : '';
+
             if (   $col == $pk 
                 || stristr($tableDesc[$col]['Extra'], 'CURRENT_TIMESTAMP')
                 || stristr($tableDesc[$col]['Default'], 'CURRENT_TIMESTAMP')
@@ -164,10 +167,11 @@ class CRUD
             }
             else
             {
-                echo "<input type='text' id='$inputName' name='$inputName' size=40>";
+                echo "<input type='text' id='$inputName' name='$inputName' $maxlength size=40>";
             }
             echo "</td>";
             echo "<td align=left>$typeDisp</td>";
+            echo "<td align=left style='width:500px;'>".$value['Comment']."</td>";
             echo "</tr>";
         }
 
@@ -340,10 +344,10 @@ class CRUD
         }
 
         $value = $this->getSavedSessionVal($table, 'customWhere');
-        echo "<tr><th>custom where:</th><td colspan=99><input id='customWhere' name='customWhere' value='$value' size=60></input></td></tr>";
+        echo "<tr><th bgcolor=#ddd2dd>custom where:</th><td colspan=99><input id='customWhere' name='customWhere' value='$value' size=60></input></td></tr>";
 
         $value = $this->getSavedSessionVal($table, 'searchAll');
-        echo "<tr><th>search all:</th><td colspan=99><input id='searchAll' name='searchAll' value='$value' size=60></input></td></tr>";
+        echo "<tr><th bgcolor=#ddd2dd>search all:</th><td colspan=99><input id='searchAll' name='searchAll' value='$value' size=60></input></td></tr>";
 
         echo "</table>";
     }
@@ -613,6 +617,9 @@ class CRUD
             $type = $tableDesc[$col]['Type'];
             $typeDisp = $type;
 
+            $match = preg_match('#\((\d*?)\)#', $type, $matches);
+            $maxlength = ($match) ? 'maxlength='.$matches[1] : '';
+
             echo '<tr>';
             echo '<td align="right"><strong>'.$col.'</strong></td>';
             echo '<td>';
@@ -645,7 +652,7 @@ class CRUD
                 }
                 else
                 {
-                    echo "<input type='text' name='$inputName' id='$inputName' size=40 value='$value'>";
+                    echo "<input type='text' name='$inputName' id='$inputName' size=40 $maxlength value='$value'>";
                 }
 
             }
