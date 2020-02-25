@@ -543,13 +543,14 @@ class CRUD
             echo "<td><a href='index.php?table=$table&cmd=editRecord&recordId=$id'><button class='button1'>edit</button></a></td>";
             foreach ($fields as $fld)
             {
+                $type = $tableDesc[$fld]['Type'];
                 $val = $row[$fld];
                 $val = htmlspecialchars_decode($val);
                 $bgcolor = '';
                 if (   array_key_exists($table, $this->dbColors) 
                     && array_key_exists($fld, $this->dbColors[$table])
                     && array_key_exists($val, $this->dbColors[$table][$fld])) {$bgcolor = 'bgcolor='.$this->dbColors[$table][$fld][$val];}
-                $style = ($tableDesc[$fld]['Type'] == 'text') ? ' style="max-width:400px;" ' : '';
+                $style = ($type == 'text' || $type == 'longtext') ? ' style="max-width:400px; min-width:200px;" ' : '';
                 echo "<td $bgcolor $style>$val</td>";
             }
             echo "</tr>";
