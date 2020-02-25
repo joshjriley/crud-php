@@ -79,10 +79,11 @@ class CRUD
         }
     }
 
+
     function printPageHeader()
     {
-        echo "<script src='crud.js'></script>";
-        echo "<link rel='stylesheet' href='crud.css'></style>";  
+        echo "<script src='crud.js?v=" . date('Y-m-d') . "'></script>";
+        echo "<link rel='stylesheet' href='crud.css?v=" . date('Y-m-d') . "'></style>";  
     }
 
 
