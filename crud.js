@@ -55,7 +55,7 @@ function clearForm(form)
 }
 
 
-function sortTable(n, tableId) 
+function sortTable(n, isNum, tableId) 
 {
     var shouldSwitch = 0;
     var switchcount = 0;
@@ -74,11 +74,12 @@ function sortTable(n, tableId)
             shouldSwitch = false;
 
             //Compare col val from current row and next row
-            var x = rows[i].getElementsByTagName("TD")[n];
-            var y = rows[i+1].getElementsByTagName("TD")[n];
+            var x = rows[i].getElementsByTagName("TD")[n].innerHTML;
+            var y = rows[i+1].getElementsByTagName("TD")[n].innerHTML;
             if (dir == "asc") 
             {
-                if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) 
+                doSwitch = (isNum) ? parseFloat(x) > parseFloat(y) : x.toLowerCase() > y.toLowerCase();
+                if (doSwitch)
                 {
                     shouldSwitch = true;
                     break;
@@ -86,7 +87,8 @@ function sortTable(n, tableId)
             } 
             else if (dir == "desc") 
             {
-                if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) 
+                doSwitch = (isNum) ? parseFloat(x) < parseFloat(y) : x.toLowerCase() < y.toLowerCase();
+                if (doSwitch)
                 {
                     shouldSwitch = true;
                     break;

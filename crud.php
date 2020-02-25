@@ -528,7 +528,9 @@ class CRUD
         echo "<th></th>";
         foreach ($fields as $i=>$fld)
         {
-            echo "<th style='cursor:pointer;' onclick='sortTable(".($i+1).", \"queryResultsTable\")'>$fld</th>";
+            $type = $tableDesc[$fld]['Type'];
+            $isNum = (stristr($type, 'int(') || stristr($type, 'float')) ? 1 : 0;
+            echo "<th style='cursor:pointer;' onclick='sortTable(".($i+1).", $isNum, \"queryResultsTable\")'>$fld</th>";
         }
 
         $i = 1;
