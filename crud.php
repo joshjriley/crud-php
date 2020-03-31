@@ -438,7 +438,7 @@ class CRUD
                 if ($j > 0) $qWhere .= " and ";
                 if ($key == 'customWhere')
                 {
-                    $qWhere .= addslashes(trim($value));
+                    $qWhere .= trim($value);
                 }
                 else if ($key == 'searchAll')
                 {
