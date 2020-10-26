@@ -189,7 +189,7 @@ class CRUD
         echo $this->getDropdownHtml($inputName, $out[1], null, $value, 'select...');
     }
 
-    function addForeignKeySelector($table, $col, $inputName)
+    function addForeignKeySelector($table, $col, $inputName, $curVal=null)
     {
         $fkey   = $this->foreignKeys[$table][$col][0];
         $ftable = $this->foreignKeys[$table][$col][1];
@@ -204,7 +204,7 @@ class CRUD
             $options[] = $row[$fkey] . ' ('.$row[$fname].')';
             $values[]  = $row[$fkey];
         }
-        echo $this->getDropdownHtml($inputName, $options, $values, null, 'select foreign key...');
+        echo $this->getDropdownHtml($inputName, $options, $values, $curVal, 'select foreign key...');
     }
 
     function getDropdownHtml($inputName, $options, $values=null, $value=null, $defaultText=null)
@@ -637,7 +637,7 @@ class CRUD
                 $inputName = "edit_$col";
                 if (array_key_exists($table, $this->foreignKeys) && array_key_exists($col, $this->foreignKeys[$table]))
                 {
-                    $this->addForeignKeySelector($table, $col, $inputName);   
+                    $this->addForeignKeySelector($table, $col, $inputName, $value);   
                 }
                 else if (stristr($type, 'enum('))
                 {
