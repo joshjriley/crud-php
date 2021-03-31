@@ -26,28 +26,11 @@ class CRUD
         $this->foreignKeys = $dbForeignKeys;
         $this->dbColors = $dbColors;
         $this->pageTitle    = $pageTitle;
-        $this->username = "";
-    }
-
-
-    function check_login()
-    {
-        $this->username = $_COOKIE["WMKOuser"];
-        if (!$this->username)
-        {
-            include "/home/www/public/commonMenus2/authentication.inc";
-            $wmkoportal = new authentication("bypass");
-            if (!$wmkoportal->loggedin) return 0;
-            $this->username = $wmkoportal->username;
-        }
-        return 1;
     }
 
 
     function start()
     {
-        if (@ !$this->check_login()) return;
-
         $this->checkSessionTimeout();
 
         $params = array_merge($_GET, $_POST);
