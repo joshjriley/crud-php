@@ -26,11 +26,28 @@ class CRUD
         $this->foreignKeys = $dbForeignKeys;
         $this->dbColors = $dbColors;
         $this->pageTitle    = $pageTitle;
+        $this->username = "";
+    }
+
+
+    function check_login()
+    {
+        $this->username = $_COOKIE["WMKOuser"];
+        if (!$this->username)
+        {
+            include "/home/www/public/commonMenus2/authentication.inc";
+            $wmkoportal = new authentication("bypass");
+            if (!$wmkoportal->loggedin) return 0;
+            $this->username = $wmkoportal->username;
+        }
+        return 1;
     }
 
 
     function start()
     {
+        if (@ !$this->check_login()) return;
+
         $this->checkSessionTimeout();
 
         $params = array_merge($_GET, $_POST);
@@ -317,6 +334,7 @@ class CRUD
             echo "<td>";
             if (array_key_exists($table, $this->foreignKeys) && array_key_exists($col, $this->foreignKeys[$table]))
             {
+                $inputName = "DD".$col;
                 $this->addForeignKeySelector($table, $col, $inputName);   
             }
             else if (stristr($type, 'enum('))
@@ -432,13 +450,13 @@ class CRUD
                 $qCols .= $name;
                 $i++;
             }
-            else if ($pre == "TX" || $key == 'customWhere' || $key == 'searchAll')
+            else if ($pre == "TX" || $pre == 'DD' || $key == 'customWhere' || $key == 'searchAll')
             {
                 if (strlen($value) <= 0) continue;
                 if ($j > 0) $qWhere .= " and ";
                 if ($key == 'customWhere')
                 {
-                    $qWhere .= trim($value);
+                    $qWhere .= addslashes(trim($value));
                 }
                 else if ($key == 'searchAll')
                 {
@@ -452,8 +470,9 @@ class CRUD
                     $name = substr($key, 2);
                     $type = (array_key_exists($name, $tableDesc)) ? $tableDesc[$name]['Type'] : false;
                     $isEnum = ($type && stristr($type, 'enum(')) ? true : false;
-                    if      ($isEnum)   $qWhere .= $name . " = '" . addslashes(trim($value))."'";
-                    else                $qWhere .= $name . " like '%" . addslashes(trim($value))."%'";
+                    $isDD = ($pre == 'DD') ? true : false;
+                    if   ($isEnum || $isDD) $qWhere .= $name . " = '" . addslashes(trim($value))."'";
+                    else                    $qWhere .= $name . " like '%" . addslashes(trim($value))."%'";
                 }
                 $j++;
             }
